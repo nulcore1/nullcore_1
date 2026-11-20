@@ -8,7 +8,7 @@ ESP32-S3 N16R8, экран ST7789 2.0" (240×320), 5 физических кно
 `firmware/nullcore_merged.bin` — единый образ, шить на **offset 0x0** (например, через https://esp.huhn.me).
 
 - Собрано из Bruce `2b6ba4d` (версия 1.17), env `nullcore`
-- SHA-256: `a6f82e4fcf49d75ee82a4b965c9cfe1fc93c05f93121dc1d629c599805a1d8d5`
+- SHA-256: `8f3a5ad9362fea4924dc16ff18675458b4b4750bf1aef48959c2b4785fbea01b`
 - Состав: bootloader `0x0`, partitions `0x8000`, boot_app0 `0xe000`, firmware `0x10000`
 
 ## Пинаут
@@ -25,21 +25,49 @@ ESP32-S3 N16R8, экран ST7789 2.0" (240×320), 5 физических кно
 Кнопки: UP — вверх/назад по списку, DOWN — вниз, LEFT — Esc (назад), RIGHT/OK — выбор.
 OK также будит устройство из глубокого сна.
 
+## Отличия от стандартного Bruce
+
+Все правки включаются флагами платы в `nullcore.ini`, поэтому другие платы Bruce не затронуты.
+
+### Загрузочная заставка
+«Bruce» → «nullcore», строка «PREDATORY FIRMWARE» убрана.
+
+### Чищеное меню (флаг `NULLCORE_TRIM`)
+- **Главное меню** — убраны разделы без железа и необязательные:
+  LoRa, FM, Ethernet, GPS, Clock, WireTools.
+  Осталось: WiFi, BLE, RF, NRF24, IR, RFID, Files, Scripts, Others, Config.
+- **Меню WiFi** — убраны редко нужные сетевые инструменты:
+  Listen TCP, Client TCP, SOCKS4 Proxy, Responder.
+  (TelNET, SSH, Wireguard и все атаки оставлены.)
+
+### Signal Pet (флаг `NULLCORE_SIGNALPET`)
+Вместо атакующего Brucegotchi — пассивный питомец-искатель сигналов
+(`WiFi → Signal Pet`). Только слушает эфир, **ничего не передаёт и не атакует**:
+- пассивный скан Wi-Fi, BLE и 433 МГц (CC1101);
+- 7 настроений-мордочек от «спит» (тихо вокруг) до «очень живо» (много сигналов);
+- сверху живые счётчики `WiFi:n BLE:n RF:bar`, снизу — находки `FND` и аптайм.
+
+Исходники питомца: `boards/nullcore/src/signalpet.{cpp,h}` (при сборке кладутся
+в `src/modules/pwnagotchi/` дерева Bruce).
+
+### Прочее
+- `interface.cpp`: заданы `rfModule = CC1101`, `rfidModule = PN532`, чтобы радио и NFC
+  работали «из коробки». `powerOff()` будит устройство кнопкой OK (GPIO8).
+- В `nullcore.ini`: `-DHAS_4_BUTTONS=1` (без него экранная клавиатура не реагирует
+  на кнопки), `DEEPSLEEP_WAKEUP_PIN=8`.
+
 ## Пересборка
 
 ```sh
 git clone https://github.com/pr3y/Bruce.git && cd Bruce
+git checkout 2b6ba4d
 git submodule update --init --depth 1
 cp -r ../nullcore_1/boards/nullcore boards/
-git apply ../nullcore_1/patches/boot_screen_nullcore.patch
+cp ../nullcore_1/boards/nullcore/src/signalpet.* src/modules/pwnagotchi/
+git apply ../nullcore_1/patches/nullcore_changes.patch
 pio run -e nullcore
 # готовый образ: Bruce-nullcore.bin (или .pio/build/nullcore/firmware.factory.bin)
 ```
 
-## Отличия от исходных файлов из задания
-
-- `nullcore.ini`: добавлен `-DHAS_4_BUTTONS=1` — без флага раскладки кнопок экранная клавиатура
-  Bruce (ввод паролей Wi-Fi, имён файлов) не реагирует на кнопки. Добавлены
-  `DEEPSLEEP_WAKEUP_PIN=8` / `DEEPSLEEP_PIN_ACT=LOW` для пункта «Deep Sleep».
-- `interface.cpp`: `powerOff()` теперь включает пробуждение по кнопке OK (GPIO8) перед
-  глубоким сном — раньше устройство можно было разбудить только сбросом.
+> Примечание: `boards/nullcore/src/` — вспомогательная папка для хранения в этом репозитории;
+> в дереве Bruce эти файлы должны лежать в `src/modules/pwnagotchi/`.

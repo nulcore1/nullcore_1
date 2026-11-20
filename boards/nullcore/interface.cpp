@@ -14,8 +14,13 @@
 #include "hal/device.h"
 #include <driver/rtc_io.h>
 #include <interface.h>
+#ifdef NULLCORE_QEMU_MIRROR
+#include <globals.h>
+#endif
 
+#ifndef BTN_ACT
 #define BTN_ACT LOW // buttons pull the pin to GND when pressed
+#endif
 
 #define BTN_UP 4
 #define BTN_DOWN 5
@@ -46,6 +51,10 @@ void _setup_gpio() {
         (gpio_num_t)12, (gpio_num_t)13, (gpio_num_t)11, (gpio_num_t)17, (gpio_num_t)18
     };
 
+    // Default modules fitted on nullcore (otherwise Bruce assumes M5 RF433 / M5 RFID2)
+    bruceConfigPins.rfModule = CC1101_SPI_MODULE;
+    bruceConfigPins.rfidModule = PN532_I2C_MODULE;
+
     // Generic/outer SPI bus (sck, miso, mosi, cs)
     bruceConfigPins.outer_bus = {(gpio_num_t)12, (gpio_num_t)13, (gpio_num_t)11, (gpio_num_t)10};
 
@@ -65,6 +74,10 @@ void _setup_gpio() {
 void _post_setup_gpio() {
     hal_bright_attach(TFT_BL);
     hal_bright_set(TFT_BL, 100);
+#ifdef NULLCORE_QEMU_MIRROR // (globals.h declares tft)
+    // Emulator test builds only: mirror every draw call over serial from boot on
+    tft.startAsyncSerial();
+#endif
 }
 
 void _setBrightness(uint8_t brightval) { hal_bright_set(TFT_BL, brightval); }

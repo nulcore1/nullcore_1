@@ -1,0 +1,96 @@
+diff --git a/src/core/main_menu.cpp b/src/core/main_menu.cpp
+index 7420b9e..8e6bffb 100644
+--- a/src/core/main_menu.cpp
++++ b/src/core/main_menu.cpp
+@@ -9,25 +9,29 @@ MainMenu::MainMenu() {
+         &bleMenu,
+         &rfMenu,
+         &nrf24Menu,
+-#if !defined(LITE_VERSION)
++#if !defined(LITE_VERSION) && !defined(NULLCORE_TRIM)
+         &loraMenu,
+ #endif
+-#if !defined(LITE_VERSION)
++#if !defined(LITE_VERSION) && !defined(NULLCORE_TRIM)
+         &fmMenu,
+ #endif
+         &irMenu,
+-#if !defined(LITE_VERSION)
++#if !defined(LITE_VERSION) && !defined(NULLCORE_TRIM)
+         &ethernetMenu,
+ #endif
++#if !defined(NULLCORE_TRIM)
+         &gpsMenu,
++#endif
+         &rfidMenu,
+         &fileMenu,
+ #if !defined(LITE_VERSION) && !defined(DISABLE_INTERPRETER)
+         &scriptsMenu,
+ #endif
++#if !defined(NULLCORE_TRIM)
+         &clockMenu,
++#endif
+         &othersMenu,
+-#if !defined(LITE_VERSION)
++#if !defined(LITE_VERSION) && !defined(NULLCORE_TRIM)
+         &wireToolsMenu,
+ #endif
+         &configMenu,
+diff --git a/src/core/menu_items/WifiMenu.cpp b/src/core/menu_items/WifiMenu.cpp
+index 2e6512c..b998183 100644
+--- a/src/core/menu_items/WifiMenu.cpp
++++ b/src/core/menu_items/WifiMenu.cpp
+@@ -21,6 +21,7 @@
+ 
+ #ifndef LITE_VERSION
+ #include "modules/pwnagotchi/pwnagotchi.h"
++#include "modules/pwnagotchi/signalpet.h"
+ #include "modules/wifi/channel_analyzer.h"
+ #if defined(CONFIG_IDF_TARGET_ESP32C5)
+ #include "modules/wifi/dual_band_analyzer.h"
+@@ -72,9 +73,11 @@ void WifiMenu::optionsMenu() {
+     options.push_back({"NetCut", [=]() { netcutMenu(); }});
+     // options.push_back({"ReverseShell", [=]()       { ReverseShell(); }});
+ #ifndef LITE_VERSION
++#ifndef NULLCORE_TRIM
+     options.push_back({"Listen TCP", listenTcpPort});
+     options.push_back({"Client TCP", clientTCP});
+     options.push_back({"SOCKS4 Proxy", []() { socks4Proxy(1080); }});
++#endif
+     options.push_back({"TelNET", telnet_setup});
+     options.push_back({"SSH", lambdaHelper(ssh_setup, String(""))});
+     options.push_back({"Sniffer", sniffer_setup});
+@@ -101,8 +104,14 @@ void WifiMenu::optionsMenu() {
+                            }
+                        }});
+     options.push_back({"Wireguard", wg_setup});
++#ifndef NULLCORE_TRIM
+     options.push_back({"Responder", responder});
++#endif
++    #ifdef NULLCORE_SIGNALPET
++    options.push_back({"Signal Pet", signalpet_start});
++#else
+     options.push_back({"Brucegotchi", brucegotchi_start});
++#endif
+ #if defined(CONFIG_IDF_TARGET_ESP32S3)
+     options.push_back({"WiFite", wifite_menu});
+ #endif
+diff --git a/src/main.cpp b/src/main.cpp
+index eebc4a9..ba621c1 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -274,13 +274,9 @@ void boot_screen() {
+     tft.setTextColor(bruceConfig.priColor, bruceConfig.bgColor);
+     tft.setTextSize(FM);
+     tft.drawPixel(0, 0, bruceConfig.bgColor);
+-    tft.drawCentreString("Bruce", tftWidth / 2, 10, 1);
++    tft.drawCentreString("nullcore", tftWidth / 2, 10, 1);
+     tft.setTextSize(FP);
+     tft.drawCentreString(BRUCE_VERSION, tftWidth / 2, 25, 1);
+-    tft.setTextSize(FM);
+-    tft.drawCentreString(
+-        "PREDATORY FIRMWARE", tftWidth / 2, tftHeight + 2, 1
+-    ); // will draw outside the screen on non touch devices
+ }
+ 
+ /*********************************************************************
