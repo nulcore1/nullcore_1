@@ -8,7 +8,7 @@ ESP32-S3 N16R8, экран ST7789 2.0" (240×320), 5 физических кно
 `firmware/nullcore_merged.bin` — единый образ, шить на **offset 0x0** (например, через https://esp.huhn.me).
 
 - Собрано из Bruce `2b6ba4d` (версия 1.17), env `nullcore`
-- SHA-256: `80a508d8da4474c0a08d998b6e0d7ed13052face065a66525ed9d85d3564ce92`
+- SHA-256: `cf86a847b631bb274b8243237f0b628437a759e84f8b4ef57a6ef54da7ea015a`
 - Состав: bootloader `0x0`, partitions `0x8000`, boot_app0 `0xe000`, firmware `0x10000`
 
 ## Пинаут
@@ -62,6 +62,8 @@ OK также будит устройство из глубокого сна.
   работали «из коробки». `powerOff()` будит устройство кнопкой OK (GPIO8).
 - В `nullcore.ini`: `-DHAS_4_BUTTONS=1` (без него экранная клавиатура не реагирует
   на кнопки), `DEEPSLEEP_WAKEUP_PIN=8`.
+- Цвет интерфейса по умолчанию — **Light Blue** (`DEFAULT_PRICOLOR=0x96FE`).
+  Меняется на устройстве в Config → Display & UI → UI Color (15+ схем + свой цвет).
 
 ## Пересборка
 
