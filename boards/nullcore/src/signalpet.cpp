@@ -19,7 +19,7 @@
 // ---------------------------------------------------------------------------
 //  Faces — signal-hunting themed. Index = mood tier.
 // ---------------------------------------------------------------------------
-enum PetMood : uint8_t { SLEEP, BORED, CALM, CURIOUS, HAPPY, EXCITED, ALERT, N_MOODS };
+enum PetMood : uint8_t { SLEEP, BORED, CALM, CURIOUS, HAPPY, EXCITED, ALERT, ATTACK, N_MOODS };
 
 static const char *petFaces[N_MOODS] = {
     "(-_-) zzz", // SLEEP   - nothing around
@@ -29,6 +29,7 @@ static const char *petFaces[N_MOODS] = {
     "(^_^)",     // HAPPY   - busy band
     "(>o<)!",    // EXCITED - very busy
     "(@_@)!!",   // ALERT   - new strong signal
+    "( ToT )/",  // ATTACK  - aggressive mode: jamming burst
 };
 
 static const char *petPhrases[N_MOODS] = {
@@ -39,6 +40,7 @@ static const char *petPhrases[N_MOODS] = {
     "Lots of chatter!",
     "The air is ALIVE!",
     "New strong signal!",
+    "GRRR! Jamming!",
 };
 
 // ---------------------------------------------------------------------------
@@ -59,6 +61,8 @@ struct PetState {
 
     bool senseRF = true;  // CC1101 sweep enabled
     bool senseBLE = true; // BLE sweep enabled
+    bool aggressive = false; // aggressive mode: jam a strong 433 MHz signal when found
+    uint32_t jamCount = 0;   // how many jam bursts fired this session
     uint8_t mood = CALM;
 };
 
@@ -110,11 +114,18 @@ static void drawFooter() {
     tft.setTextSize(FP);
 
     uint32_t up = millis() / 1000;
-    char l[48];
-    snprintf(
-        l, sizeof(l), "FND %lu  UP %02u:%02u:%02u", (unsigned long)pet.discoveries,
-        (unsigned)(up / 3600), (unsigned)((up % 3600) / 60), (unsigned)(up % 60)
-    );
+    char l[56];
+    if (pet.aggressive) {
+        snprintf(
+            l, sizeof(l), "[JAM %lu] UP %02u:%02u:%02u", (unsigned long)pet.jamCount,
+            (unsigned)(up / 3600), (unsigned)((up % 3600) / 60), (unsigned)(up % 60)
+        );
+    } else {
+        snprintf(
+            l, sizeof(l), "FND %lu  UP %02u:%02u:%02u", (unsigned long)pet.discoveries,
+            (unsigned)(up / 3600), (unsigned)((up % 3600) / 60), (unsigned)(up % 60)
+        );
+    }
     tft.setTextDatum(TL_DATUM);
     tft.drawString(l, 2, botH + 4);
 
@@ -236,12 +247,45 @@ static void senseRf() {
 #endif // NULLCORE_QEMU_MIRROR
 
 // ---------------------------------------------------------------------------
+//  Aggressive mode — fire a short jamming burst on the 433 MHz band the pet is
+//  tuned to. This TRANSMITS: only reachable after the user flips the pet into
+//  "Aggressive" mode from the menu (default is the passive, receive-only mode).
+// ---------------------------------------------------------------------------
+static void jamBurst() {
+    pet.mood = ATTACK;
+    drawFace();
+    pet.jamCount++;
+#if !defined(NULLCORE_QEMU_MIRROR)
+    if (bruceConfigPins.rfModule != CC1101_SPI_MODULE) return;
+    if (!initRfModule("tx", bruceConfigPins.rfFreq)) return;
+    int pin = (int)bruceConfigPins.CC1101_bus.io0; // CC1101 GDO0 drives OOK output
+    uint32_t start = millis();
+    while (millis() - start < 800) { // ~0.8 s burst, then back to listening
+        for (int i = 0; i < 100; i++) {
+            digitalWrite(pin, HIGH);
+            delayMicroseconds(3);
+            digitalWrite(pin, LOW);
+            delayMicroseconds(1);
+        }
+        if (check(EscPress)) break;
+    }
+    digitalWrite(pin, LOW);
+    deinitRfModule();
+    tft.drawPixel(0, 0, 0); // CC1101 shares SPI with the TFT — nudge the bus back
+#else
+    delay(600);
+#endif
+}
+
+// ---------------------------------------------------------------------------
 //  Options menu (Sel)
 // ---------------------------------------------------------------------------
 static void petMenu() {
+    String md = pet.aggressive ? "Mode: AGGRESSIVE" : "Mode: Passive";
     String rf = pet.senseRF ? "RF sense: ON" : "RF sense: OFF";
     String bl = pet.senseBLE ? "BLE sense: ON" : "BLE sense: OFF";
     options = {
+        {md.c_str(), []() { pet.aggressive = !pet.aggressive; }},
         {rf.c_str(), []() { pet.senseRF = !pet.senseRF; }},
         {bl.c_str(), []() { pet.senseBLE = !pet.senseBLE; }},
         {"Main Menu", []() { setExit(true); }},
@@ -315,7 +359,12 @@ void signalpet_start() {
             computeMood(newRecord);
             drawAll();
 
-            if (newRecord) {
+            // Aggressive mode: when a strong 433 MHz signal was just sensed, bite back
+            // with a short jamming burst on that band. Passive mode never transmits.
+            if (pet.aggressive && pet.rfActive) {
+                jamBurst();
+                drawAll();
+            } else if (newRecord) {
                 vTaskDelay(700 / portTICK_PERIOD_MS); // let the alert face linger
             }
         }
