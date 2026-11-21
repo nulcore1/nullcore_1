@@ -1,7 +1,11 @@
 # nullcore
 
-Кастомная прошивка на основе [Bruce](https://github.com/pr3y/Bruce) для самодельного устройства:
-ESP32-S3 N16R8, экран ST7789 2.0" (240×320), 5 физических кнопок, CC1101, nRF24L01, PN532 (I2C), ИК.
+Кастомная прошивка для самодельного устройства:
+ESP32-S3 N16R8, экран ST7789 2.0" (240×320), физические кнопки, CC1101, nRF24L01, PN532 (I2C), ИК.
+
+Это **самодостаточный форк** [Bruce](https://github.com/pr3y/Bruce): весь исходный код и
+библиотеки вложены в репозиторий, прошивка собирается **без отдельного клонирования Bruce**.
+Лицензия — **AGPL-3.0** (см. `LICENSE` и `NOTICE.md`).
 
 ## Готовая прошивка
 
@@ -93,18 +97,27 @@ OK также будит устройство из глубокого сна.
 - **CC1101 на отдельных пинах:** вынесен со shared-SPI на свободные правые пины
   (SCK=47, MOSI=38, MISO=2, CS=48, GDO0=1), чтобы не паять на занятый GPIO12.
 
-## Пересборка
+## Сборка (самодостаточная)
+
+Клонируешь этот репозиторий и собираешь — Bruce отдельно клонировать **не нужно**:
 
 ```sh
-git clone https://github.com/pr3y/Bruce.git && cd Bruce
-git checkout 2b6ba4d
-git submodule update --init --depth 1
-cp -r ../nullcore_1/boards/nullcore boards/
-cp ../nullcore_1/boards/nullcore/src/signalpet.* src/modules/pwnagotchi/
-git apply ../nullcore_1/patches/nullcore_changes.patch
+git clone https://github.com/nulcore1/nullcore_1.git && cd nullcore_1
 pio run -e nullcore
-# готовый образ: Bruce-nullcore.bin (или .pio/build/nullcore/firmware.factory.bin)
+# merged-образ пересобрать: см. firmware/ (bootloader 0x0, partitions 0x8000,
+# boot_app0 0xe000, firmware 0x10000)
 ```
 
-> Примечание: `boards/nullcore/src/` — вспомогательная папка для хранения в этом репозитории;
-> в дереве Bruce эти файлы должны лежать в `src/modules/pwnagotchi/`.
+Собрать под готовую плату (T-Embed, M5StickC, Cardputer, CYD …):
+
+```sh
+pio run -e nullcore-t-embed        # список env: pio project config
+```
+
+Сторонние библиотеки PlatformIO докачивает сам при первой сборке.
+
+## Лицензия и авторство
+
+nullcore — производная работа от [Bruce](https://github.com/pr3y/Bruce) под **AGPL-3.0**.
+Файл `LICENSE` — текст AGPL-3.0, `NOTICE.md` — атрибуция, `THIRD_PARTY.md` — сторонние
+библиотеки. При распространении прошивки сохраняй лицензию и исходники (условие AGPL).

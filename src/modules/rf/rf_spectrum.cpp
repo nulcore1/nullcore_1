@@ -1,0 +1,445 @@
+#include "rf_spectrum.h"
+#include "core/display.h"
+#include "protocols/rf_config.h"
+#include "protocols/rf_decoder.h"
+#include "rf_utils.h"
+#include "structs.h"
+
+// Plot band, derived from the panel so the graph never collides with the title
+// bar or the status line on any of the supported screens.
+static inline int rf_plot_top() { return BORDER_PAD_Y + 8 * FM + 2; }
+static inline int rf_plot_bot() { return tftHeight - 8 * FP - 8; }
+// Side margins keep the graph clear of the rounded theme border at x = 5.
+static inline int rf_plot_left() { return 8; }
+static inline int rf_plot_width() { return tftWidth - 16; }
+static inline uint16_t rf_grid_color() {
+    return blendColors(bruceConfig.bgColor, bruceConfig.priColor, 55);
+}
+static inline uint16_t rf_label_color() {
+    return blendColors(bruceConfig.bgColor, bruceConfig.priColor, 170);
+}
+
+// Frame plus a single status line at the bottom. Drawn once, and again only
+// when the tuning changes, so the live graph never flickers.
+static void draw_rf_header(const String &title, const String &info) {
+    drawMainBorderWithTitle(title);
+    tft.setTextSize(FP);
+    tft.fillRect(rf_plot_left(), rf_plot_bot() + 2, rf_plot_width(), 8 * FP, bruceConfig.bgColor);
+    tft.setTextColor(rf_label_color(), bruceConfig.bgColor);
+    tft.drawString(info, rf_plot_left(), rf_plot_bot() + 2, 1);
+}
+
+static bool spectrum_rmt_rx_done_callback(
+    rmt_channel_t *channel, const rmt_rx_done_event_data_t *edata, void *user_data
+) {
+    BaseType_t high_task_wakeup = pdFALSE;
+    QueueHandle_t receive_queue = (QueueHandle_t)user_data;
+    // send the received RMT symbols to the parser task
+    xQueueSendFromISR(receive_queue, edata, &high_task_wakeup);
+    return high_task_wakeup == pdTRUE;
+}
+
+void draw_tf_spectrum_grid() {
+    const int top = rf_plot_top();
+    const int bot = rf_plot_bot();
+    const uint16_t grid = rf_grid_color();
+
+    const int left = rf_plot_left();
+    const int w = rf_plot_width();
+
+    tft.fillRect(left, top, w, bot - top, bruceConfig.bgColor);
+    tft.drawFastHLine(left, (top + bot) / 2, w, grid);
+    for (int i = 1; i < 4; i++) tft.drawFastVLine(left + (i * w) / 4, top, bot - top, grid);
+}
+
+// Centres a pulse-width bar on the mid line of the plot band.
+static void draw_rf_pulse(int x, int magnitude) {
+    const int top = rf_plot_top();
+    const int bot = rf_plot_bot();
+    const int mid = (top + bot) / 2;
+    int h = map(magnitude, 0, SIGNAL_STRENGTH_THRESHOLD, 0, bot - top);
+    int startY = constrain(mid - h / 2, top, bot);
+    int endY = constrain(mid + h / 2, top, bot);
+    tft.drawLine(x, startY, x, endY, bruceConfig.priColor);
+}
+
+void rf_spectrum() {
+    draw_rf_header("RF Spectrum", String(bruceConfigPins.rfFreq, 2) + " MHz");
+    draw_tf_spectrum_grid();
+    if (bruceConfigPins.rfModule == M5_RF_MODULE) {
+        RfRxSession rx;
+        if (!rx.begin()) {
+            deinitRfModule();
+            return;
+        }
+
+        std::vector<int> durations;
+        while (1) {
+            if (rx.poll(durations)) {
+                draw_tf_spectrum_grid();
+                for (size_t i = 0; i < durations.size(); i++) {
+                    int lineX =
+                        rf_plot_left() +
+                        map(i, 0, durations.size() > 1 ? durations.size() - 1 : 1, 0, rf_plot_width() - 1);
+                    draw_rf_pulse(lineX, abs(durations[i]));
+                }
+                RF_DBG("m5 spectrum: durations=%u", (unsigned)durations.size());
+            }
+
+            if (check(EscPress)) { break; }
+            if (setMHZMenu()) {
+                rx.end();
+                rx.begin();
+                draw_rf_header("RF Spectrum", String(bruceConfigPins.rfFreq, 2) + " MHz");
+                draw_tf_spectrum_grid();
+            }
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+
+        rx.end();
+        returnToMenu = true;
+        deinitRfModule();
+        return;
+    }
+
+    rmt_channel_handle_t rx_ch = NULL;
+    rx_ch = setup_rf_rx();
+    if (rx_ch == NULL) return;
+    ESP_LOGI("RMT_SPECTRUM", "register RX done callback");
+    QueueHandle_t receive_queue = xQueueCreate(1, sizeof(rmt_rx_done_event_data_t));
+    assert(receive_queue);
+    rmt_rx_event_callbacks_t cbs = {
+        .on_recv_done = spectrum_rmt_rx_done_callback,
+    };
+    ESP_ERROR_CHECK(rmt_rx_register_event_callbacks(rx_ch, &cbs, receive_queue));
+    ESP_ERROR_CHECK(rmt_enable(rx_ch));
+    rmt_receive_config_t receive_config = {
+        .signal_range_min_ns = 3000,     // 6us minimum signal duration
+        .signal_range_max_ns = 12000000, // 24ms maximum signal duration
+    };
+    rmt_symbol_word_t item[64];
+    rmt_rx_done_event_data_t rx_data;
+    ESP_ERROR_CHECK(rmt_receive(rx_ch, item, sizeof(item), &receive_config));
+
+    size_t rx_size = 0;
+    while (1) {
+        rmt_symbol_word_t *rx_items = NULL;
+        if (xQueueReceive(receive_queue, &rx_data, 0) == pdPASS) {
+            rx_size = rx_data.num_symbols;
+            rx_items = rx_data.received_symbols;
+        }
+        if (rx_size != 0) {
+            // Draw grid and info
+            draw_tf_spectrum_grid();
+            // Draw waveform based on signal strength
+            for (size_t i = 0; i < rx_size; i++) {
+                int lineX = rf_plot_left() + map(i, 0, rx_size - 1, 0, rf_plot_width() - 1);
+                draw_rf_pulse(lineX, rx_items[i].duration0 + rx_items[i].duration1);
+            }
+
+            ESP_ERROR_CHECK(rmt_receive(rx_ch, item, sizeof(item), &receive_config));
+            rx_size = 0;
+        }
+        // Checks to leave while
+        if (check(EscPress)) { break; }
+        if (setMHZMenu()) yield();
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    returnToMenu = true;
+    rmt_disable(rx_ch);
+    rmt_del_channel(rx_ch);
+    vQueueDelete(receive_queue);
+    deinitRfModule();
+}
+
+#define TIME_DIVIDER (rf_plot_width() / 10)
+//@Pirata
+void rf_SquareWave() {
+    if (!initRfModule("rx", bruceConfigPins.rfFreq)) return;
+
+    RfRxSession rx;
+    if (!rx.begin()) {
+        deinitRfModule();
+        return;
+    }
+
+    const int top = rf_plot_top();
+    const int bot = rf_plot_bot();
+    // Left gutter for the Y (logic level) labels and a bottom strip for the
+    // X (time) labels, so the trace never paints over the numbering.
+    const int gutter = FP * LW + 4;
+    const int xLabelH = 8 * FP + 2;
+    const int drawLeft = rf_plot_left() + gutter;
+    const int drawRight = rf_plot_left() + rf_plot_width();
+    const int drawW = drawRight - drawLeft;
+    const int plotBot = bot - xLabelH;
+    const int sbY = top + 1;     // scrollbar rail
+    const int yHi = top + 8;     // logic HIGH rail (below the scrollbar)
+    const int yLo = plotBot - 4; // logic LOW rail
+    const int nDiv = 10;
+    const uint16_t grid = rf_grid_color();
+    const uint16_t label = rf_label_color();
+    const int scrollStep = (drawW / 4 < 8) ? 8 : drawW / 4;
+
+    // The full latest capture is kept so the whole signal can be panned through,
+    // not just the slice that happened to fit on screen while it arrived.
+    std::vector<int> capture;
+    int scrollPx = 0, totalPx = 0, maxScroll = 0;
+
+    // Pixel width of one duration (microseconds -> px), clamped like the trace.
+    auto durPx = [&](int us) {
+        if (us < 0) us = -us;
+        if (us > 20000) us = 20000;
+        return us / TIME_DIVIDER;
+    };
+
+    // Clears the plot band, paints the grid, the X/Y numbers for the currently
+    // visible time window and, when the capture is wider than the screen, a
+    // scrollbar showing where the window sits within the whole capture.
+    auto draw_axes = [&]() {
+        tft.fillRect(rf_plot_left(), top, rf_plot_width(), bot - top, bruceConfig.bgColor);
+        tft.setTextSize(FP);
+
+        for (int k = 0; k <= nDiv; k++) { // vertical time divisions
+            int x = drawLeft + k * drawW / nDiv;
+            tft.drawFastVLine(x, yHi - 2, plotBot - (yHi - 2), grid);
+        }
+        tft.drawFastHLine(drawLeft, yHi, drawW, grid); // logic rails
+        tft.drawFastHLine(drawLeft, yLo, drawW, grid);
+
+        tft.setTextColor(label, bruceConfig.bgColor);
+        tft.drawString("1", rf_plot_left(), yHi - (8 * FP) / 2, 1); // Y: logic level
+        tft.drawString("0", rf_plot_left(), yLo - (8 * FP) / 2, 1);
+
+        // X: absolute time of the visible window (each pixel = TIME_DIVIDER us)
+        int startUs = scrollPx * TIME_DIVIDER;
+        int endUs = (scrollPx + drawW) * TIME_DIVIDER;
+        int ly = plotBot + 1;
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%.1f", startUs / 1000.0f);
+        tft.drawString(buf, drawLeft, ly, 1);
+        snprintf(buf, sizeof(buf), "%.1f", ((startUs + endUs) / 2) / 1000.0f);
+        tft.drawCentreString(buf, drawLeft + drawW / 2, ly, 1);
+        snprintf(buf, sizeof(buf), "%.1fms", endUs / 1000.0f);
+        tft.drawRightString(buf, drawRight, ly, 1);
+
+        // Scrollbar, only when there is more capture than fits on screen.
+        if (totalPx > drawW) {
+            tft.drawFastHLine(drawLeft, sbY, drawW, grid);
+            int thumbX = drawLeft + (int)((int64_t)scrollPx * drawW / totalPx);
+            int thumbW = (int)((int64_t)drawW * drawW / totalPx);
+            if (thumbW < 4) thumbW = 4;
+            if (thumbX + thumbW > drawRight) thumbX = drawRight - thumbW;
+            tft.drawFastHLine(thumbX, sbY, thumbW, bruceConfig.priColor);
+            tft.drawFastHLine(thumbX, sbY + 1, thumbW, bruceConfig.priColor);
+        }
+    };
+
+    // Draws the visible slice [scrollPx, scrollPx+drawW] of the stored capture.
+    auto render = [&]() {
+        draw_axes();
+        int visL = scrollPx, visR = scrollPx + drawW;
+        auto sx = [&](int t) { return drawLeft + (t - scrollPx); };
+        auto hrun = [&](int a, int b, int y) { // horizontal run [a,b) at level y
+            if (b <= visL || a >= visR) return;
+            int ca = a < visL ? visL : a;
+            int cb = b > visR ? visR : b;
+            if (cb > ca) tft.drawFastHLine(sx(ca), y, cb - ca, bruceConfig.priColor);
+        };
+        auto vedge = [&](int t) { // vertical transition between the two rails
+            if (t < visL || t > visR) return;
+            tft.drawFastVLine(sx(t), yHi, yLo - yHi + 1, bruceConfig.priColor);
+        };
+        int px = 0;
+        for (size_t i = 0; i + 1 < capture.size(); i += 2) {
+            if (capture[i] == 0 || px > visR) break;
+            int hpx = durPx(capture[i]);
+            int lpx = durPx(capture[i + 1]);
+            vedge(px);
+            hrun(px, px + hpx, yHi);
+            px += hpx;
+            vedge(px);
+            hrun(px, px + lpx, yLo);
+            px += lpx;
+        }
+    };
+
+PRINT:
+    tft.drawPixel(0, 0, 0);
+    draw_rf_header("RF SquareWave", String(bruceConfigPins.rfFreq, 2) + " MHz  < > scroll");
+    capture.clear(); // drop any stale capture (e.g. after a frequency change)
+    scrollPx = totalPx = maxScroll = 0;
+    render();
+
+    while (1) {
+        // Each new capture replaces the buffer and shows its start; the arrows
+        // then pan across the whole thing.
+        if (rx.poll(capture)) {
+            totalPx = 0;
+            for (size_t i = 0; i + 1 < capture.size(); i += 2) {
+                if (capture[i] == 0) break;
+                totalPx += durPx(capture[i]) + durPx(capture[i + 1]);
+            }
+            maxScroll = totalPx > drawW ? totalPx - drawW : 0;
+            scrollPx = 0;
+            render();
+        }
+
+        // NextPress / PrevPress are the portable navigation keys: the Cardputer
+        // arrows, the two-button pads and the rotary encoder all map onto them.
+        if (check(NextPress)) { // scroll right / forward in time
+            int ns = scrollPx + scrollStep;
+            scrollPx = ns > maxScroll ? maxScroll : ns;
+            render();
+        } else if (check(PrevPress)) { // scroll left / back in time
+            int ns = scrollPx - scrollStep;
+            scrollPx = ns < 0 ? 0 : ns;
+            render();
+        }
+
+        // Checks to leave while
+        if (check(EscPress)) { break; }
+        if (setMHZMenu()) goto PRINT;
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    rx.end();
+    returnToMenu = true;
+}
+
+void rf_CC1101_rssi() {
+#if !defined(LITE_VERSION)
+    if (bruceConfigPins.rfModule != CC1101_SPI_MODULE) {
+        displayError("only for CC1101 module", true);
+        return;
+    }
+    // Left gutter wide enough for the "-95" scale labels, band derived from the
+    // panel instead of assuming a 120px tall screen.
+    const int top = rf_plot_top();
+    const int bot = rf_plot_bot();
+    const int axisX = rf_plot_left() + 3 * FP * LW + 2;
+    const int graph_size = rf_plot_left() + rf_plot_width() - axisX - 2;
+    std::vector<int> signal(graph_size, -95);
+    const size_t freq_count = sizeof(subghz_frequency_list) / sizeof(float);
+    std::vector<int> bar_size(freq_count, 0);
+    const int max_bar_size = bot - top;
+    bool redraw = true;
+    const int min_value = map(-70, -95, -20, 0, max_bar_size);
+    // dBm -> screen row, so the scale follows the plot band on every device
+    auto rssiY = [&](int rssi) { return (int)map(constrain(rssi, -95, -20), -95, -20, bot, top); };
+
+    while (1) {
+        if (redraw) {
+            redraw = false;
+            tft.drawPixel(0, 0, 0);
+            tft.setTextSize(FP);
+            // Fixed frequency sees a dot running grafic, showing RSSI over time
+            if (bruceConfigPins.rfFxdFreq) {
+                if (!initRfModule("rx", bruceConfigPins.rfFreq))
+                    displayError("Error setting frequency", true);
+                draw_rf_header("RF RSSI", String(bruceConfigPins.rfFreq, 2) + " MHz");
+                tft.fillRect(rf_plot_left(), top, rf_plot_width(), bot - top, bruceConfig.bgColor);
+                tft.drawFastVLine(axisX, top, bot - top, bruceConfig.priColor);
+                tft.setTextColor(rf_label_color(), bruceConfig.bgColor);
+                for (int dbm = -95; dbm <= -20; dbm += 15) {
+                    int y = rssiY(dbm) - (8 * FP) / 2;
+                    tft.drawString(String(dbm), 8, y, 1);
+                    tft.drawFastHLine(axisX - 2, rssiY(dbm), 3, rf_grid_color());
+                }
+                // resets signal array
+                std::fill(signal.begin(), signal.end(), -95);
+            }
+            // Range Scan Sees a bargraph simillar to NRF24 grafic, using RSSI across frequencies
+            else {
+                if (!initRfModule("rx", bruceConfigPins.rfFreq)) displayError("Error starting module", true);
+                // the band edges are drawn on the bottom row, so keep it empty here
+                draw_rf_header(
+                    String("RF RSSI ") + subghz_frequency_ranges[bruceConfigPins.rfScanRange], ""
+                );
+                tft.fillRect(rf_plot_left(), top, rf_plot_width(), bot - top, bruceConfig.bgColor);
+                tft.drawFastHLine(rf_plot_left(), bot, rf_plot_width(), bruceConfig.priColor);
+                tft.setTextColor(rf_label_color(), bruceConfig.bgColor);
+                char buf[8];
+                float var = subghz_frequency_list[range_limits[bruceConfigPins.rfScanRange][0]];
+                snprintf(buf, sizeof(buf), "%.3f", var);
+                tft.drawString(buf, rf_plot_left(), bot + 2, 1);
+                var = subghz_frequency_list[range_limits[bruceConfigPins.rfScanRange][1]];
+                snprintf(buf, sizeof(buf), "%.3f", var);
+                tft.drawRightString(buf, rf_plot_left() + rf_plot_width(), bot + 2, 1);
+                int range = range_limits[bruceConfigPins.rfScanRange][1] -
+                            range_limits[bruceConfigPins.rfScanRange][0] + 1;
+                int space = rf_plot_width() / range;
+                for (int i = 0; i < range; i++) {
+                    tft.drawFastVLine(rf_plot_left() + space * i, bot - 4, 4, rf_grid_color());
+                }
+                std::fill(bar_size.begin(), bar_size.end(), 0);
+            }
+        }
+
+        // draw dot graph for fixed frequency
+        if (bruceConfigPins.rfFxdFreq) {
+            int rssi = ELECHOUSE_cc1101.getRssi();
+            tft.drawPixel(0, 0, 0); // To make sure CC1101 shared with TFT works properly
+            int prev = signal[0];
+            for (int i = 1; i < graph_size; i++) {
+                if (EscPress || SelPress) break;
+                const int x0 = axisX + (i - 1);
+                const int x1 = axisX + i;
+                const int curr = signal[i];
+                // erase old segment between previous and current points
+                tft.drawLine(x0, rssiY(prev), x1, rssiY(curr), bruceConfig.bgColor);
+                const int next_val = (i == graph_size - 1) ? rssi : signal[i + 1];
+                // shift buffer left by one
+                signal[i - 1] = curr;
+                if (i == graph_size - 1) signal[i] = rssi;
+                // draw updated segment using new values
+                tft.drawLine(x0, rssiY(curr), x1, rssiY(next_val), bruceConfig.priColor);
+                prev = curr;
+            }
+            tft.drawFastVLine(axisX, top, bot - top, bruceConfig.priColor);
+            vTaskDelay(pdMS_TO_TICKS(75));
+        }
+        // draw a bargraph similar to nrf24 across the range
+        else {
+            int range = range_limits[bruceConfigPins.rfScanRange][1] -
+                        range_limits[bruceConfigPins.rfScanRange][0] + 1;
+
+            int space = rf_plot_width() / range;
+            int max_idx = 0;
+            for (int i = 0; i < range; i++) {
+                if (EscPress || SelPress) break;
+                setMHZ(subghz_frequency_list[range_limits[bruceConfigPins.rfScanRange][0] + i]);
+                vTaskDelay(pdMS_TO_TICKS(5));
+                int rssi = ELECHOUSE_cc1101.getRssi();
+                tft.drawPixel(0, 0, 0); // To make sure CC1101 shared with TFT works properly
+                int size = map(rssi, -95, -20, 0, max_bar_size);
+                if (size > bar_size[i]) bar_size[i] = size;
+                else bar_size[i] = bar_size[i] - (bar_size[i] - size) / 2; // slow down decrease
+                tft.fillRect(
+                    rf_plot_left() + i * space, bot - bar_size[i], space - 2, bar_size[i], bruceConfig.priColor
+                );
+                tft.fillRect(
+                    rf_plot_left() + i * space, top, space, max_bar_size - bar_size[i], bruceConfig.bgColor
+                );
+                if (bar_size[i] > bar_size[max_idx] && bar_size[i] > min_value) max_idx = i;
+            }
+            if (bar_size[max_idx] > min_value) {
+                char buf[8];
+                float var = subghz_frequency_list[range_limits[bruceConfigPins.rfScanRange][0] + max_idx];
+                snprintf(buf, sizeof(buf), "%.2f", var);
+                tft.setTextColor(rf_label_color(), bruceConfig.bgColor);
+                tft.drawCentreString("Max=       ", tftWidth / 2, bot + 2, 1);
+                tft.drawCentreString("Max=" + String(buf), tftWidth / 2, bot + 2, 1);
+            }
+        }
+        if (check(EscPress)) { break; }
+        if (check(SelPress)) {
+            deinitRfModule();
+            rf_range_selection(bruceConfigPins.rfFreq);
+            redraw = true;
+        }
+    }
+    deinitRfModule();
+#else
+    displayError("Not available on Launcher version");
+#endif
+}
