@@ -11,6 +11,19 @@ ESP32-S3 N16R8, экран ST7789 2.0" (240×320), 5 физических кно
 - SHA-256: `998becce71acca724e6e8b47d065a97c1edbb1694319fb2b15fbd9f5c0d3f591`
 - Состав: bootloader `0x0`, partitions `0x8000`, boot_app0 `0xe000`, firmware `0x10000`
 
+### Прошивка одной командой (Windows, PowerShell)
+
+Ничего ставить не надо (Python не нужен, VPN не нужен). Открой **PowerShell**, вставь
+и нажми Enter — команда сама скачает `esptool` и прошивку с GitHub и зальёт плату:
+
+```powershell
+irm https://raw.githubusercontent.com/nulcore1/nullcore_1/refs/heads/claude/awesome-rubin-rx06y6/flash.ps1 | iex
+```
+
+Подключи плату по USB дата-кабелем. Если не начнётся — зажми **BOOT**, ткни **RESET**,
+отпусти BOOT и запусти команду снова. Если COM-портов несколько, укажи свой:
+`$env:NULLCORE_PORT="COM5"` и снова запусти команду. Скрипт — [`flash.ps1`](flash.ps1).
+
 ## Пинаут
 
 | Модуль | Пины |
