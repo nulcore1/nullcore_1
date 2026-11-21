@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<title>nullcore</title>
+<style>
+  /* Layout: single dark page — hero with mascot, then stacked doc sections in a centered column */
+  :root{
+    --bg:#0a0e14; --panel:#111823; --panel2:#0d141d;
+    --line:#1e2a3a; --fg:#e6edf5; --muted:#8aa0b8;
+    --accent:#8fe3ff; --accent-dim:#2a4a5c; --warn:#ffd27a;
+    color-scheme:dark;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --disp:"Space Grotesk",system-ui,sans-serif;
+    --body:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  h1,h2,h3{font-family:var(--disp);text-wrap:balance;line-height:1.15}
+  code,pre{font-family:var(--mono)}
+
+  /* hero */
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
+    background:radial-gradient(900px 420px at 50% -120px,rgba(143,227,255,.14),transparent 70%),var(--panel2)}
+  .hero .wrap{padding-block:48px 40px;text-align:center}
+  .cat{width:150px;height:auto;image-rendering:pixelated;filter:drop-shadow(0 0 22px rgba(143,227,255,.45))}
+  .title{font-size:clamp(44px,13vw,86px);font-weight:700;letter-spacing:-.03em;margin:10px 0 6px}
+  .title b{color:var(--accent);font-weight:700}
+  .tag{color:var(--muted);font-size:clamp(14px,3.6vw,18px);margin:0 auto;max-width:34ch}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px}
+  .chip{font-family:var(--mono);font-size:12px;color:var(--accent);
+    border:1px solid var(--accent-dim);background:rgba(143,227,255,.06);border-radius:999px;padding:5px 11px}
+
+  section{padding-block:34px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+  h2{font-size:clamp(22px,5vw,30px);margin:0 0 14px}
+  p{margin:0 0 12px}
+  .muted{color:var(--muted)}
+
+  /* flash block */
+  .cmd{position:relative;background:#07141c;border:1px solid var(--accent-dim);border-radius:12px;
+    padding:16px 16px;margin:12px 0;overflow-x:auto}
+  .cmd .lbl{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:.05em}
+  .cmd code{display:block;color:var(--accent);font-size:13.5px;white-space:pre;min-width:0}
+  .steps{display:grid;gap:10px;margin:14px 0 0;padding:0;list-style:none;counter-reset:s}
+  .steps li{position:relative;padding-left:40px;color:var(--fg)}
+  .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:-1px;
+    width:26px;height:26px;border-radius:7px;display:grid;place-items:center;
+    font-family:var(--mono);font-size:13px;color:var(--bg);background:var(--accent);font-weight:700}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--warn);
+    border-radius:8px;padding:12px 14px;margin-top:14px;color:var(--muted);font-size:14px}
+  .note b{color:var(--warn)}
+
+  /* pinout table */
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  table{border-collapse:collapse;width:100%;min-width:460px;font-size:14px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+  thead th{background:var(--panel);font-family:var(--disp);color:var(--accent);font-size:13px}
+  tbody tr:last-child td{border-bottom:0}
+  td.mod{font-family:var(--disp);white-space:nowrap}
+  td.pins{font-family:var(--mono);color:var(--muted);font-size:13px}
+
+  /* features grid */
+  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:8px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card h3{font-size:16px;margin:0 0 6px;color:var(--fg)}
+  .card p{font-size:14px;color:var(--muted);margin:0}
+  .card .ic{font-family:var(--mono);color:var(--accent);font-size:13px;margin-bottom:8px}
+
+  footer{padding-block:28px 40px;text-align:center;color:var(--muted);font-size:13px}
+  .swatch{display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--accent);vertical-align:-1px;margin-right:4px}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="wrap">
+    <img class="cat" alt="nullcore cat mascot" src="data:image/png;base64,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">
+    <h1 class="title"><b>null</b>core</h1>
+    <p class="tag">DIY-прошивка на базе Bruce для карманного ESP32-S3 устройства</p>
+    <div class="chips">
+      <span class="chip">ESP32-S3 N16R8</span>
+      <span class="chip">ST7789 2.0"</span>
+      <span class="chip">Sub-GHz · NFC · IR · nRF24</span>
+      <span class="chip">3 кнопки</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section>
+    <p class="eyebrow">Что это</p>
+    <h2>Карманный мульти-инструмент</h2>
+    <p>nullcore — сборка <a href="https://github.com/pr3y/Bruce">Bruce</a> под самодельное устройство на ESP32-S3:
+    экран ST7789, физические кнопки, радио CC1101 (433 МГц), nRF24L01, NFC-модуль PN532 и ИК.
+    На загрузке — кот-маскот, меню оформлено сеткой иконок-плиток, управление на трёх кнопках.</p>
+    <p class="muted">Лишние для этого железа разделы убраны, цвет интерфейса по умолчанию — <span class="swatch"></span>Light Blue.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Прошивка</p>
+    <h2>Одной командой · Windows</h2>
+    <p class="muted">Ничего ставить не надо — Python не нужен, VPN не нужен. Открой PowerShell, вставь строку и нажми Enter:</p>
+    <div class="cmd">
+      <div class="lbl">PowerShell</div>
+      <code>irm https://raw.githubusercontent.com/nulcore1/nullcore_1/refs/heads/main/flash.ps1 | iex</code>
+    </div>
+    <ol class="steps">
+      <li>Подключи плату по USB <b>дата-кабелем</b> (не «только зарядка»).</li>
+      <li>Команда сама скачает esptool + прошивку и зальёт на <code>0x0</code>.</li>
+      <li>Увидишь зелёное «Готово» — временные файлы удаляются автоматически.</li>
+    </ol>
+    <div class="note"><b>Не подключается?</b> Зажми BOOT, ткни RESET, отпусти BOOT и запусти снова.
+    Если COM-портов несколько: <code>$env:NULLCORE_PORT="COM5"</code> и повтори команду.
+    Альтернатива без PowerShell — залить <code>nullcore_merged.bin</code> на <code>0x0</code> через esp.huhn.me.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Железо</p>
+    <h2>Пинаут</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Модуль</th><th>Пины</th></tr></thead>
+        <tbody>
+          <tr><td class="mod">ST7789 (SPI)</td><td class="pins">SCLK=12 MOSI=11 MISO=13 CS=10 DC=9 RST=14 BL=21</td></tr>
+          <tr><td class="mod">CC1101</td><td class="pins">общий SPI · CS=15 · GDO0=16</td></tr>
+          <tr><td class="mod">nRF24L01</td><td class="pins">общий SPI · CS=17 · CE=18</td></tr>
+          <tr><td class="mod">PN532 (I2C)</td><td class="pins">SDA=41 · SCL=42</td></tr>
+          <tr><td class="mod">ИК</td><td class="pins">TX=40 · RX=39</td></tr>
+          <tr><td class="mod">Кнопки (на GND)</td><td class="pins">UP=4 DOWN=5 LEFT=6 RIGHT=7 OK=8</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="margin-top:12px">UP — вверх, DOWN — вниз, OK — выбор. <b style="color:var(--fg)">UP+DOWN вместе = назад.</b> OK также будит из сна.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Возможности</p>
+    <h2>Что умеет устройство</h2>
+    <div class="feat">
+      <div class="card"><div class="ic">📡 433 МГц</div><h3>Sub-GHz CC1101</h3><p>Сканер эфира, запись и повтор радиосигналов: брелоки, датчики, пульты, метеостанции.</p></div>
+      <div class="card"><div class="ic">📶 Wi-Fi</div><h3>Wi-Fi-арсенал</h3><p>Сканер сетей, Evil Portal, деаутентификация, beacon-спам, перехват рукопожатий.</p></div>
+      <div class="card"><div class="ic">⌨ HID</div><h3>BadUSB</h3><p>Плата притворяется клавиатурой и выполняет Ducky-скрипты по USB — автоввод за секунды.</p></div>
+      <div class="card"><div class="ic">▶ IR</div><h3>ИК-пульт</h3><p>Принимает и отправляет ИК: ТВ, кондиционеры, проекторы — универсальный пульт в кармане.</p></div>
+      <div class="card"><div class="ic">🏷 NFC</div><h3>NFC / RFID</h3><p>PN532 читает, сохраняет и эмулирует метки и карты 13.56 МГц.</p></div>
+      <div class="card"><div class="ic">2.4 ГГц</div><h3>nRF24</h3><p>Сканер каналов 2.4 ГГц и BLE-спам — анализ и шум в радиоэфире рядом.</p></div>
+      <div class="card"><div class="ic">( o_o )</div><h3>Signal Pet</h3><p>Питомец-радар: «нюхает» Wi-Fi, BLE и 433 МГц и меняет настроение по плотности эфира.</p></div>
+      <div class="card"><div class="ic">⚙ custom</div><h3>Свой визуал</h3><p>Кот на старте, меню-сетка плитками, 3 кнопки и тема Light Blue из коробки.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    nullcore · собрано из Bruce 1.17 · прошивать на offset <code>0x0</code><br>
+    <span class="muted">Превью вики-страницы — оригинальный дизайн, не копия чужих прошивок.</span>
+  </footer>
+
+</div>
+
+</body>
+</html>
