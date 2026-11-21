@@ -1,194 +1,297 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap">
-<title>nullcore</title>
+<title>nullcore wiki</title>
 <style>
-  /* Layout: single dark page — hero with mascot, then stacked doc sections in a centered column */
   :root{
-    --bg:#0a0e14; --panel:#111823; --panel2:#0d141d;
-    --line:#1e2a3a; --fg:#e6edf5; --muted:#8aa0b8;
-    --accent:#8fe3ff; --accent-dim:#2a4a5c; --warn:#ffd27a;
+    --bg:#0a0e14; --panel:#111823; --panel2:#0d141d; --line:#1e2a3a;
+    --fg:#e6edf5; --muted:#8aa0b8; --accent:#8fe3ff; --accent-dim:#2a4a5c; --warn:#ffd27a;
     color-scheme:dark;
-    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
     --disp:"Space Grotesk",system-ui,sans-serif;
     --body:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --sidew:270px;
   }
   *{box-sizing:border-box}
+  html,body{margin:0}
   body{background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-  a{color:var(--accent);text-decoration:none}
-  a:hover{text-decoration:underline}
-  h1,h2,h3{font-family:var(--disp);text-wrap:balance;line-height:1.15}
-  code,pre{font-family:var(--mono)}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  h1,h2,h3{font-family:var(--disp);line-height:1.15;text-wrap:balance}
+  code{font-family:var(--mono)}
 
-  /* hero */
-  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
-    background:radial-gradient(900px 420px at 50% -120px,rgba(143,227,255,.14),transparent 70%),var(--panel2)}
-  .hero .wrap{padding-block:48px 40px;text-align:center}
-  .cat{width:150px;height:auto;image-rendering:pixelated;filter:drop-shadow(0 0 22px rgba(143,227,255,.45))}
-  .title{font-size:clamp(44px,13vw,86px);font-weight:700;letter-spacing:-.03em;margin:10px 0 6px}
-  .title b{color:var(--accent);font-weight:700}
-  .tag{color:var(--muted);font-size:clamp(14px,3.6vw,18px);margin:0 auto;max-width:34ch}
-  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px}
-  .chip{font-family:var(--mono);font-size:12px;color:var(--accent);
-    border:1px solid var(--accent-dim);background:rgba(143,227,255,.06);border-radius:999px;padding:5px 11px}
+  /* layout */
+  .shell{display:grid;grid-template-columns:var(--sidew) 1fr;min-height:100vh}
+  aside{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    background:var(--panel2);border-right:1px solid var(--line);
+    padding:22px 16px calc(22px + env(safe-area-inset-bottom,0px));
+    padding-left:max(16px,env(safe-area-inset-left,0px))}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .brand img{width:34px;height:34px;image-rendering:pixelated;filter:drop-shadow(0 0 10px rgba(143,227,255,.5))}
+  .brand .wm{font-family:var(--disp);font-weight:700;font-size:22px;letter-spacing:-.02em}
+  .brand .wm b{color:var(--accent)}
+  .ver{font-family:var(--mono);font-size:11px;color:var(--muted);margin:0 0 18px 44px}
 
-  section{padding-block:34px;border-bottom:1px solid var(--line)}
-  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
-  h2{font-size:clamp(22px,5vw,30px);margin:0 0 14px}
-  p{margin:0 0 12px}
-  .muted{color:var(--muted)}
+  .lang{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:0 0 18px}
+  .lang button{background:transparent;border:0;color:var(--muted);font:600 12px var(--body);padding:5px 14px;cursor:pointer}
+  .lang button.on{background:var(--accent);color:#06121f}
 
-  /* flash block */
-  .cmd{position:relative;background:#07141c;border:1px solid var(--accent-dim);border-radius:12px;
-    padding:16px 16px;margin:12px 0;overflow-x:auto}
-  .cmd .lbl{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:.05em}
+  .navlabel{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin:4px 6px 8px}
+  nav a{display:block;padding:9px 12px;border-radius:9px;color:var(--fg);font-size:14.5px;margin-bottom:2px}
+  nav a:hover{background:var(--panel);text-decoration:none}
+  nav a.active{background:var(--accent);color:#06121f;font-weight:600}
+  .navsep{height:1px;background:var(--line);margin:12px 6px}
+
+  main{min-width:0;max-width:880px;padding:40px 40px 80px;
+    padding-left:max(40px,env(safe-area-inset-left,0px));padding-right:max(40px,env(safe-area-inset-right,0px))}
+  section{display:none} section.show{display:block}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+  h1.page{font-size:clamp(30px,6vw,46px);letter-spacing:-.03em;margin:0 0 14px}
+  h2{font-size:clamp(20px,4vw,27px);margin:34px 0 12px}
+  p{margin:0 0 12px} .muted{color:var(--muted)}
+
+  .hero{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-bottom:10px}
+  .hero img{width:120px;height:auto;image-rendering:pixelated;filter:drop-shadow(0 0 22px rgba(143,227,255,.45))}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+  .chip{font-family:var(--mono);font-size:12px;color:var(--accent);border:1px solid var(--accent-dim);background:rgba(143,227,255,.06);border-radius:999px;padding:5px 11px}
+
+  .cmd{background:#07141c;border:1px solid var(--accent-dim);border-radius:12px;padding:14px 16px;margin:12px 0;overflow-x:auto}
+  .cmd .lbl{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:8px}
   .cmd code{display:block;color:var(--accent);font-size:13.5px;white-space:pre;min-width:0}
   .steps{display:grid;gap:10px;margin:14px 0 0;padding:0;list-style:none;counter-reset:s}
-  .steps li{position:relative;padding-left:40px;color:var(--fg)}
-  .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:-1px;
-    width:26px;height:26px;border-radius:7px;display:grid;place-items:center;
-    font-family:var(--mono);font-size:13px;color:var(--bg);background:var(--accent);font-weight:700}
-  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--warn);
-    border-radius:8px;padding:12px 14px;margin-top:14px;color:var(--muted);font-size:14px}
+  .steps li{position:relative;padding-left:40px}
+  .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:-1px;width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-family:var(--mono);font-size:13px;color:#06121f;background:var(--accent);font-weight:700}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:8px;padding:12px 14px;margin-top:14px;color:var(--muted);font-size:14px}
   .note b{color:var(--warn)}
 
-  /* pinout table */
-  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
-  table{border-collapse:collapse;width:100%;min-width:460px;font-size:14px}
-  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
-  thead th{background:var(--panel);font-family:var(--disp);color:var(--accent);font-size:13px}
-  tbody tr:last-child td{border-bottom:0}
-  td.mod{font-family:var(--disp);white-space:nowrap}
-  td.pins{font-family:var(--mono);color:var(--muted);font-size:13px}
-
-  /* features grid */
-  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:8px}
+  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:10px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-  .card h3{font-size:16px;margin:0 0 6px;color:var(--fg)}
-  .card p{font-size:14px;color:var(--muted);margin:0}
+  .card h3{font-size:16px;margin:0 0 6px} .card p{font-size:14px;color:var(--muted);margin:0}
   .card .ic{font-family:var(--mono);color:var(--accent);font-size:13px;margin-bottom:8px}
 
-  footer{padding-block:28px 40px;text-align:center;color:var(--muted);font-size:13px}
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:10px}
+  table{border-collapse:collapse;width:100%;min-width:460px;font-size:14px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line)}
+  thead th{background:var(--panel);font-family:var(--disp);color:var(--accent);font-size:13px}
+  tbody tr:last-child td{border-bottom:0}
+  td.mono,.pins{font-family:var(--mono);color:var(--muted);font-size:13px}
   .swatch{display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--accent);vertical-align:-1px;margin-right:4px}
+
+  .topbar{display:none}
+  /* mobile */
+  @media(max-width:860px){
+    .shell{grid-template-columns:1fr}
+    aside{position:fixed;inset:0 auto 0 0;width:min(84vw,320px);height:100vh;z-index:40;transform:translateX(-102%);transition:transform .22s ease}
+    body.nav-open aside{transform:none}
+    body.nav-open::after{content:"";position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:30}
+    .topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;
+      background:var(--panel2);border-bottom:1px solid var(--line);padding:12px 16px;
+      padding-top:calc(12px + env(safe-area-inset-top,0px))}
+    .topbar .burger{background:var(--panel);border:1px solid var(--line);color:var(--fg);border-radius:9px;width:40px;height:38px;font-size:18px;cursor:pointer}
+    .topbar .wm{font-family:var(--disp);font-weight:700;font-size:18px}
+    .topbar .wm b{color:var(--accent)}
+    main{padding:24px 16px 70px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  }
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--panel2);z-index:50}
 </style>
 </head>
 <body>
-<div class="hero">
-  <div class="wrap">
-    <img class="cat" alt="nullcore cat mascot" src="data:image/png;base64,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">
-    <h1 class="title"><b>null</b>core</h1>
-    <p class="tag">DIY-прошивка на базе Bruce для карманного ESP32-S3 устройства</p>
-    <div class="chips">
-      <span class="chip">ESP32-S3 N16R8</span>
-      <span class="chip">ST7789 2.0"</span>
-      <span class="chip">Sub-GHz · NFC · IR · nRF24</span>
-      <span class="chip">3 кнопки</span>
-    </div>
-  </div>
+
+<div class="topbar">
+  <button class="burger" aria-label="menu" onclick="document.body.classList.toggle('nav-open')">☰</button>
+  <span class="wm"><b>null</b>core</span>
 </div>
 
-<div class="wrap">
-
-  <section>
-    <p class="eyebrow">Что это</p>
-    <h2>Карманный мульти-инструмент</h2>
-    <p>nullcore — сборка <a href="https://github.com/pr3y/Bruce">Bruce</a> под самодельное устройство на ESP32-S3:
-    экран ST7789, физические кнопки, радио CC1101 (433 МГц), nRF24L01, NFC-модуль PN532 и ИК.
-    На загрузке — кот-маскот, меню оформлено сеткой иконок-плиток, управление на трёх кнопках.</p>
-    <p class="muted">Лишние для этого железа разделы убраны, цвет интерфейса по умолчанию — <span class="swatch"></span>Light Blue.</p>
-  </section>
-
-  <section>
-    <p class="eyebrow">Прошивка</p>
-    <h2>Способ 1 — одной командой (Windows)</h2>
-    <p class="muted">Ничего ставить не надо — Python не нужен, VPN не нужен. Открой <b>PowerShell</b>, вставь строку и нажми Enter:</p>
-    <div class="cmd">
-      <div class="lbl">PowerShell</div>
-      <code>irm https://raw.githubusercontent.com/nulcore1/nullcore_1/refs/heads/main/flash.ps1 | iex</code>
+<div class="shell">
+  <aside onclick="if(event.target.tagName==='A')document.body.classList.remove('nav-open')">
+    <div class="brand">
+      <img src="data:image/png;base64,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" alt="nullcore">
+      <span class="wm"><b>null</b>core</span>
     </div>
-    <ol class="steps">
-      <li>Подключи плату по USB <b>дата-кабелем</b> (не «только зарядка»).</li>
-      <li>Команда сама скачает esptool + прошивку и зальёт на <code>0x0</code>.</li>
-      <li>Зелёное «Готово» — временные файлы удаляются автоматически, перезагрузи плату.</li>
-    </ol>
-    <div class="note"><b>Несколько COM-портов?</b> Укажи свой и повтори команду:
-    <code>$env:NULLCORE_PORT="COM5"</code></div>
-  </section>
+    <div class="ver">wiki · Bruce-based</div>
 
-  <section>
-    <p class="eyebrow">Прошивка</p>
-    <h2>Способ 2 — через сайт esp.huhn.me</h2>
-    <p class="muted">Браузер Chrome/Edge на ПК. Файл <code>nullcore_merged.bin</code> возьми из папки
-    <code>firmware/</code> репозитория (для своей платы — <code>nullcore-&lt;плата&gt;_merged.bin</code>).</p>
-    <ol class="steps">
-      <li>Открой <b>esp.huhn.me</b>, подключи плату по USB.</li>
-      <li><b>Connect</b> → выбери COM-порт платы.</li>
-      <li><b>Erase</b> (очистить флеш), дождись «done».</li>
-      <li>В строке адреса поставь <code>0x0</code>, кнопкой выбери файл <code>.bin</code>.</li>
-      <li><b>Program</b> → дождись 100%.</li>
-      <li>Нажми <b>Reset</b> или отключи-включи плату — загрузится nullcore (кот на старте).</li>
-    </ol>
-    <div class="note"><b>В конце выскочила ошибка «serial data stream stopped» на ~100%?</b>
-    На родном USB-порту это частое и обычно безобидное — прошивка уже записана. Просто перезагрузи плату и проверь, появился ли кот.</div>
-  </section>
-
-  <section>
-    <p class="eyebrow">Если не прошивается</p>
-    <h2>Решение проблем</h2>
-    <div class="feat">
-      <div class="card"><h3>COM-порт не появляется</h3><p>Недолитая прошивка не создаёт порт. Введи плату в режим загрузки: <b>зажми BOOT → ткни RESET → отпусти BOOT</b> — порт появится, тогда Connect и Program.</p></div>
-      <div class="card"><h3>Светится, но нет данных</h3><p>Чаще всего <b>кабель</b>. Нужен дата-кабель (которым телефон к ПК с передачей файлов). Зарядные кабели дают только питание.</p></div>
-      <div class="card"><h3>Два USB-разъёма</h3><p>У многих плат ESP32-S3 два USB-C. Прошивай через тот, что <b>определяется как COM</b>. Если один «мёртвый» — используй второй.</p></div>
-      <div class="card"><h3>Обрывается на 20–50%</h3><p>Плохой контакт/кабель. Зажми <b>BOOT</b> на время прошивки, или укажи порт <code>$env:NULLCORE_PORT</code>, или смени кабель.</p></div>
+    <div class="lang">
+      <button id="btn-ru" class="on" onclick="setLang('ru')">RU</button>
+      <button id="btn-en" onclick="setLang('en')">EN</button>
     </div>
-  </section>
 
-  <section>
-    <p class="eyebrow">Железо</p>
-    <h2>Пинаут</h2>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Модуль</th><th>Пины</th></tr></thead>
+    <div class="navlabel" data-en="Sections">Разделы</div>
+    <nav id="nav">
+      <a href="#home"      class="active" data-en="Home">Главная</a>
+      <a href="#flash"     data-en="Flashing">Прошивка</a>
+      <a href="#features"  data-en="Features">Функции</a>
+      <a href="#boards"    data-en="Boards">Платы</a>
+      <a href="#pinout"    data-en="Pinout">Пинаут</a>
+      <div class="navsep"></div>
+      <a href="#downloads" data-en="Downloads">Downloads</a>
+    </nav>
+  </aside>
+
+  <main>
+    <!-- HOME -->
+    <section id="home" class="show">
+      <div class="hero">
+        <img src="data:image/png;base64,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" alt="nullcore cat">
+        <div>
+          <p class="eyebrow" data-en="DIY firmware">DIY-прошивка</p>
+          <h1 class="page"><b style="color:var(--accent)">null</b>core</h1>
+          <p class="muted" data-en="A Bruce-based firmware for a handheld ESP32-S3 multi-tool — with its own look: a cat on boot, an icon-grid menu and games.">Прошивка на основе Bruce для карманного мульти-инструмента на ESP32-S3 — со своим видом: кот на загрузке, меню-сетка иконок и игры.</p>
+        </div>
+      </div>
+      <div class="chips">
+        <span class="chip">ESP32-S3 N16R8</span>
+        <span class="chip">ST7789 2.0"</span>
+        <span class="chip">Sub-GHz · NFC · IR · nRF24</span>
+        <span class="chip">3 buttons</span>
+      </div>
+      <h2 data-en="What is it">Что это</h2>
+      <p data-en='nullcore is a build of &lt;a href="https://github.com/pr3y/Bruce"&gt;Bruce&lt;/a&gt; for a self-made ESP32-S3 device: ST7789 screen, physical buttons, CC1101 (433 MHz) radio, nRF24L01, a PN532 NFC module and IR. The nullcore look and extras run on top of Bruce and can be built for stock boards too.'>nullcore — сборка <a href="https://github.com/pr3y/Bruce">Bruce</a> под самодельное устройство на ESP32-S3: экран ST7789, физические кнопки, радио CC1101 (433 МГц), nRF24L01, NFC-модуль PN532 и ИК. «Начинку» nullcore можно собрать и на готовые платы.</p>
+      <p class="muted" data-en='Default UI colour — &lt;span class="swatch"&gt;&lt;/span&gt;Light Blue.'>Цвет интерфейса по умолчанию — <span class="swatch"></span>Light Blue.</p>
+    </section>
+
+    <!-- FLASH -->
+    <section id="flash">
+      <p class="eyebrow" data-en="Flashing">Прошивка</p>
+      <h1 class="page" data-en="How to flash">Как прошить</h1>
+
+      <h2 data-en="Method 1 — one command (Windows)">Способ 1 — одной командой (Windows)</h2>
+      <p class="muted" data-en="Nothing to install — no Python, no VPN. Open PowerShell, paste the line and press Enter:">Ничего ставить не надо — Python не нужен, VPN не нужен. Открой PowerShell, вставь строку и нажми Enter:</p>
+      <div class="cmd"><div class="lbl">PowerShell</div><code>irm https://raw.githubusercontent.com/nulcore1/nullcore_1/refs/heads/main/flash.ps1 | iex</code></div>
+      <ol class="steps">
+        <li data-en="Connect the board by USB with a <b>data cable</b> (not charge-only).">Подключи плату по USB <b>дата-кабелем</b> (не «только зарядка»).</li>
+        <li data-en="The command downloads esptool + firmware and flashes it to <code>0x0</code>.">Команда сама скачает esptool + прошивку и зальёт на <code>0x0</code>.</li>
+        <li data-en="Green “Done” — temp files are removed automatically, reboot the board.">Зелёное «Готово» — временные файлы удаляются автоматически, перезагрузи плату.</li>
+      </ol>
+      <div class="note" data-en='<b>Several COM ports?</b> Set yours and re-run: <code>$env:NULLCORE_PORT="COM5"</code>'><b>Несколько COM-портов?</b> Укажи свой и повтори: <code>$env:NULLCORE_PORT="COM5"</code></div>
+
+      <h2 data-en="Method 2 — via esp.huhn.me">Способ 2 — через сайт esp.huhn.me</h2>
+      <p class="muted" data-en="Chrome/Edge on a PC. Take the <code>.bin</code> from the <code>firmware/</code> folder of the repo (for your board — <code>nullcore-&lt;board&gt;_merged.bin</code>).">Браузер Chrome/Edge на ПК. Файл возьми из папки <code>firmware/</code> репозитория (для своей платы — <code>nullcore-&lt;плата&gt;_merged.bin</code>).</p>
+      <ol class="steps">
+        <li data-en="Open <b>esp.huhn.me</b>, connect the board by USB.">Открой <b>esp.huhn.me</b>, подключи плату по USB.</li>
+        <li data-en="<b>Connect</b> → pick the board’s COM port."><b>Connect</b> → выбери COM-порт платы.</li>
+        <li data-en="<b>Erase</b> flash, wait for “done”."><b>Erase</b> (очистить флеш), дождись «done».</li>
+        <li data-en="Set address <code>0x0</code>, choose the <code>.bin</code> file.">В строке адреса поставь <code>0x0</code>, выбери файл <code>.bin</code>.</li>
+        <li data-en="<b>Program</b> → wait for 100%."><b>Program</b> → дождись 100%.</li>
+        <li data-en="<b>Reset</b> the board — nullcore boots (cat on start)."><b>Reset</b> или отключи-включи плату — загрузится nullcore (кот на старте).</li>
+      </ol>
+      <div class="note" data-en='<b>“serial data stream stopped” at ~100%?</b> On the native USB port this is common and usually harmless — the firmware is already written. Just reboot and check for the cat.'><b>Ошибка «serial data stream stopped» на ~100%?</b> На родном USB-порту это частое и обычно безобидное — прошивка уже записана. Перезагрузи плату и проверь, появился ли кот.</div>
+
+      <h2 data-en="Troubleshooting">Решение проблем</h2>
+      <div class="feat">
+        <div class="card"><h3 data-en="No COM port">COM-порт не появляется</h3><p data-en="A half-written firmware creates no port. Enter download mode: <b>hold BOOT → tap RESET → release BOOT</b>, then Connect and Program.">Недолитая прошивка не создаёт порт. Режим загрузки: <b>зажми BOOT → ткни RESET → отпусти BOOT</b>, затем Connect и Program.</p></div>
+        <div class="card"><h3 data-en="Lights but no data">Светится, но нет данных</h3><p data-en="Usually the <b>cable</b>. Use a data cable (the one that syncs a phone). Charge cables give power only.">Чаще всего <b>кабель</b>. Нужен дата-кабель (которым телефон синхронизируешь). Зарядные дают только питание.</p></div>
+        <div class="card"><h3 data-en="Two USB ports">Два USB-разъёма</h3><p data-en="Many ESP32-S3 boards have two USB-C. Flash via the one that shows up as COM. If one is dead, use the other.">У многих плат ESP32-S3 два USB-C. Шей через тот, что определяется как COM. Если один «мёртвый» — второй.</p></div>
+        <div class="card"><h3 data-en="Cuts off at 20–50%">Обрыв на 20–50%</h3><p data-en="Bad contact/cable. Hold <b>BOOT</b> while flashing, set <code>$env:NULLCORE_PORT</code>, or change the cable.">Плохой контакт/кабель. Зажми <b>BOOT</b> при прошивке, задай <code>$env:NULLCORE_PORT</code>, или смени кабель.</p></div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features">
+      <p class="eyebrow" data-en="Capabilities">Возможности</p>
+      <h1 class="page" data-en="What it can do">Что умеет</h1>
+      <div class="feat">
+        <div class="card"><div class="ic">📡 433</div><h3>Sub-GHz CC1101</h3><p data-en="Spectrum scan, record and replay RF: key fobs, sensors, remotes.">Скан эфира, запись и повтор радио: брелоки, датчики, пульты.</p></div>
+        <div class="card"><div class="ic">📶 Wi-Fi</div><h3 data-en="Wi-Fi arsenal">Wi-Fi-арсенал</h3><p data-en="Scanner, Evil Portal, deauth, beacon spam, handshake capture.">Сканер, Evil Portal, деауф, beacon-спам, перехват рукопожатий.</p></div>
+        <div class="card"><div class="ic">⌨ HID</div><h3>BadUSB</h3><p data-en="The board acts as a keyboard and runs Ducky scripts over USB.">Плата притворяется клавиатурой и выполняет Ducky-скрипты по USB.</p></div>
+        <div class="card"><div class="ic">▶ IR</div><h3 data-en="IR remote">ИК-пульт</h3><p data-en="Receives and sends IR: TVs, ACs, projectors.">Принимает и отправляет ИК: ТВ, кондиционеры, проекторы.</p></div>
+        <div class="card"><div class="ic">🏷 NFC</div><h3>NFC / RFID</h3><p data-en="PN532 reads, saves and emulates 13.56 MHz tags and cards.">PN532 читает, сохраняет и эмулирует метки и карты 13.56 МГц.</p></div>
+        <div class="card"><div class="ic">2.4 GHz</div><h3>nRF24</h3><p data-en="2.4 GHz channel scanner and BLE spam.">Сканер каналов 2.4 ГГц и BLE-спам.</p></div>
+        <div class="card"><div class="ic">( o_o )</div><h3>Signal Pet</h3><p data-en="A radar-pet: senses Wi-Fi, BLE and 433 MHz and changes mood with the air.">Питомец-радар: «нюхает» Wi-Fi, BLE и 433 МГц, меняет настроение по эфиру.</p></div>
+        <div class="card"><div class="ic">🎮 games</div><h3 data-en="Games">Игры</h3><p data-en="Jumper (OK = jump) and Snake — original, on the physical buttons.">Jumper (OK = прыжок) и Snake — оригинальные, на физических кнопках.</p></div>
+        <div class="card"><div class="ic">⚙ visual</div><h3 data-en="nullcore look">Свой визуал</h3><p data-en="Cat on boot, icon-grid menu with card tiles, Light Blue theme by default.">Кот на старте, меню-сетка плитками, тема Light Blue из коробки.</p></div>
+      </div>
+    </section>
+
+    <!-- BOARDS -->
+    <section id="boards">
+      <p class="eyebrow" data-en="Build">Сборка</p>
+      <h1 class="page" data-en="Boards">Платы</h1>
+      <p class="muted" data-en="The nullcore look &amp; features (cat, icon grid, games, Light Blue) build on top of stock Bruce boards — without touching their pins/input. Build command:">«Начинка» nullcore (кот, сетка, игры, Light Blue) собирается поверх штатных плат Bruce — не трогая их пины/ввод. Команда сборки:</p>
+      <div class="cmd"><div class="lbl">PlatformIO</div><code>pio run -e nullcore-&lt;board&gt;</code></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th data-en="Board">Плата</th><th>env</th></tr></thead>
         <tbody>
-          <tr><td class="mod">ST7789 (SPI)</td><td class="pins">SCLK=12 MOSI=11 MISO=13 CS=10 DC=9 RST=14 BL=21</td></tr>
-          <tr><td class="mod">CC1101</td><td class="pins">общий SPI · CS=15 · GDO0=16</td></tr>
-          <tr><td class="mod">nRF24L01</td><td class="pins">общий SPI · CS=17 · CE=18</td></tr>
-          <tr><td class="mod">PN532 (I2C)</td><td class="pins">SDA=41 · SCL=42</td></tr>
-          <tr><td class="mod">ИК</td><td class="pins">TX=40 · RX=39</td></tr>
-          <tr><td class="mod">Кнопки (на GND)</td><td class="pins">UP=4 DOWN=5 LEFT=6 RIGHT=7 OK=8</td></tr>
+          <tr><td>LilyGO T-Embed</td><td class="mono">nullcore-t-embed</td></tr>
+          <tr><td>LilyGO T-Embed CC1101</td><td class="mono">nullcore-t-embed-cc1101</td></tr>
+          <tr><td>LilyGO T-Display-S3</td><td class="mono">nullcore-t-display-s3</td></tr>
+          <tr><td>LilyGO T-Deck</td><td class="mono">nullcore-t-deck</td></tr>
+          <tr><td>M5StickC Plus</td><td class="mono">nullcore-m5stickc-plus</td></tr>
+          <tr><td>M5StickC Plus2</td><td class="mono">nullcore-m5stickc-plus2</td></tr>
+          <tr><td>M5Stick S3</td><td class="mono">nullcore-m5stick-s3</td></tr>
+          <tr><td>M5Cardputer</td><td class="mono">nullcore-cardputer</td></tr>
+          <tr><td>ESP32-S3 DevKitC-1</td><td class="mono">nullcore-s3-devkit</td></tr>
+          <tr><td>CYD 2432S028</td><td class="mono">nullcore-cyd-2432s028</td></tr>
+          <tr><td data-en="DIY nullcore (this device)">DIY nullcore (это устройство)</td><td class="mono">nullcore</td></tr>
         </tbody>
-      </table>
-    </div>
-    <p class="muted" style="margin-top:12px">UP — вверх, DOWN — вниз, OK — выбор. <b style="color:var(--fg)">UP+DOWN вместе = назад.</b> OK также будит из сна.</p>
-  </section>
+      </table></div>
+      <p class="muted" data-en="Add your own board: 4 lines in nullcore_flavor.ini (see boards/nullcore_flavor/README).">Добавить свою плату: 4 строки в nullcore_flavor.ini (см. boards/nullcore_flavor/README).</p>
+    </section>
 
-  <section>
-    <p class="eyebrow">Возможности</p>
-    <h2>Что умеет устройство</h2>
-    <div class="feat">
-      <div class="card"><div class="ic">📡 433 МГц</div><h3>Sub-GHz CC1101</h3><p>Сканер эфира, запись и повтор радиосигналов: брелоки, датчики, пульты, метеостанции.</p></div>
-      <div class="card"><div class="ic">📶 Wi-Fi</div><h3>Wi-Fi-арсенал</h3><p>Сканер сетей, Evil Portal, деаутентификация, beacon-спам, перехват рукопожатий.</p></div>
-      <div class="card"><div class="ic">⌨ HID</div><h3>BadUSB</h3><p>Плата притворяется клавиатурой и выполняет Ducky-скрипты по USB — автоввод за секунды.</p></div>
-      <div class="card"><div class="ic">▶ IR</div><h3>ИК-пульт</h3><p>Принимает и отправляет ИК: ТВ, кондиционеры, проекторы — универсальный пульт в кармане.</p></div>
-      <div class="card"><div class="ic">🏷 NFC</div><h3>NFC / RFID</h3><p>PN532 читает, сохраняет и эмулирует метки и карты 13.56 МГц.</p></div>
-      <div class="card"><div class="ic">2.4 ГГц</div><h3>nRF24</h3><p>Сканер каналов 2.4 ГГц и BLE-спам — анализ и шум в радиоэфире рядом.</p></div>
-      <div class="card"><div class="ic">( o_o )</div><h3>Signal Pet</h3><p>Питомец-радар: «нюхает» Wi-Fi, BLE и 433 МГц и меняет настроение по плотности эфира.</p></div>
-      <div class="card"><div class="ic">⚙ custom</div><h3>Свой визуал</h3><p>Кот на старте, меню-сетка плитками, 3 кнопки и тема Light Blue из коробки.</p></div>
-    </div>
-  </section>
+    <!-- PINOUT -->
+    <section id="pinout">
+      <p class="eyebrow" data-en="Hardware">Железо</p>
+      <h1 class="page" data-en="Pinout (DIY nullcore)">Пинаут (DIY nullcore)</h1>
+      <div class="tablewrap"><table>
+        <thead><tr><th data-en="Module">Модуль</th><th data-en="Pins">Пины</th></tr></thead>
+        <tbody>
+          <tr><td>ST7789 (SPI)</td><td class="pins">SCLK=12 MOSI=11 MISO=13 CS=10 DC=9 RST=14 BL=21</td></tr>
+          <tr><td>CC1101</td><td class="pins">SCK=47 MOSI=38 MISO=2 CS=48 GDO0=1</td></tr>
+          <tr><td>nRF24L01</td><td class="pins">SCK=47 MOSI=38 MISO=2 CS=16 CE=15</td></tr>
+          <tr><td>PN532 (I2C)</td><td class="pins">SDA=41 SCL=42</td></tr>
+          <tr><td>IR</td><td class="pins">TX=40 RX=39</td></tr>
+          <tr><td data-en="Buttons (to GND)">Кнопки (на GND)</td><td class="pins">UP=4 DOWN=5 LEFT=6 RIGHT=7 OK=8</td></tr>
+        </tbody>
+      </table></div>
+      <p class="muted" data-en="UP — up, DOWN — down, OK — select. <b style='color:var(--fg)'>UP+DOWN together = back.</b> CC1101/nRF24 share SCK/MOSI/MISO (47/38/2).">UP — вверх, DOWN — вниз, OK — выбор. <b style="color:var(--fg)">UP+DOWN вместе = назад.</b> CC1101/nRF24 делят SCK/MOSI/MISO (47/38/2).</p>
+    </section>
 
-  <footer>
-    nullcore · собрано из Bruce 1.17 · прошивать на offset <code>0x0</code><br>
-    <span class="muted">Превью вики-страницы — оригинальный дизайн, не копия чужих прошивок.</span>
-  </footer>
-
+    <!-- DOWNLOADS -->
+    <section id="downloads">
+      <p class="eyebrow">Downloads</p>
+      <h1 class="page" data-en="Download firmware">Скачать прошивку</h1>
+      <p class="muted" data-en='Ready merged <code>.bin</code> files (flash to <code>0x0</code>) live in the repo’s <code>firmware/</code> folder:'>Готовые merged <code>.bin</code> (шить на <code>0x0</code>) лежат в папке <code>firmware/</code> репозитория:</p>
+      <p><a href="https://github.com/nulcore1/nullcore_1/tree/main/firmware">github.com/nulcore1/nullcore_1 → firmware/</a></p>
+      <ul>
+        <li><code>nullcore_merged.bin</code> — <span data-en="DIY nullcore device">DIY-устройство nullcore</span></li>
+        <li><code>nullcore-t-embed_merged.bin</code> — LilyGO T-Embed</li>
+        <li><code>nullcore-t-embed-cc1101_merged.bin</code> — T-Embed CC1101</li>
+        <li class="muted" data-en="…and the other boards from the table above">…и остальные платы из таблицы выше</li>
+      </ul>
+      <div class="note" data-en="nullcore is based on Bruce and licensed under AGPL-3.0. Source and license: the repository.">nullcore основан на Bruce и распространяется под AGPL-3.0. Исходники и лицензия — в репозитории.</div>
+    </section>
+  </main>
 </div>
 
+<script>
+(function(){
+  // capture RU originals
+  document.querySelectorAll('[data-en]').forEach(function(e){ e.dataset.ru = e.innerHTML; });
+  window.setLang = function(l){
+    document.documentElement.setAttribute('data-lang', l);
+    document.documentElement.lang = l;
+    document.querySelectorAll('[data-en]').forEach(function(e){
+      e.innerHTML = (l==='en') ? e.dataset.en : e.dataset.ru;
+    });
+    document.getElementById('btn-ru').classList.toggle('on', l==='ru');
+    document.getElementById('btn-en').classList.toggle('on', l==='en');
+    try{ localStorage.setItem('nc_lang', l); }catch(e){}
+  };
+  // routing
+  function route(){
+    var id = (location.hash||'#home').slice(1);
+    if(!document.getElementById(id)) id='home';
+    document.querySelectorAll('main section').forEach(function(s){ s.classList.toggle('show', s.id===id); });
+    document.querySelectorAll('#nav a').forEach(function(a){ a.classList.toggle('active', a.getAttribute('href')==='#'+id); });
+    window.scrollTo(0,0);
+  }
+  window.addEventListener('hashchange', route);
+  var saved='ru'; try{ saved = localStorage.getItem('nc_lang')||'ru'; }catch(e){}
+  setLang(saved); route();
+})();
+</script>
 </body>
 </html>
