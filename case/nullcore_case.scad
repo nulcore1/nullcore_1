@@ -29,6 +29,10 @@ edge_r      = 3.5;   // скругление ВСЕХ внешних рёбер
 usb_w       = 11;    // ширина выреза
 usb_h       = 5.5;   // высота выреза
 usb_z       = 8;     // центр выреза по глубине (от передней стенки)
+
+// ===== T-Embed-стиль =====
+bezel       = 3;     // ширина рамки вокруг экрана (заглубление)
+recess      = 1.3;   // глубина заглублений на передней грани
 // =================================================
 
 inner_w = disp_pcb_w + 2*clr;
@@ -75,4 +79,14 @@ difference(){
     ur = usb_h/2; len = wall+2;
     x0 = (outer_w-usb_w)/2 + ur; x1 = (outer_w+usb_w)/2 - ur;
     hull(){ yslot(x0, usb_z, ur, len); yslot(x1, usb_z, ur, len); }
+
+    // --- T-Embed: заглублённая рамка вокруг экрана ---
+    translate([(outer_w-(win_w+2*bezel))/2, win_y-bezel, -0.1])
+        rrect_z(win_w+2*bezel, win_h+2*bezel, win_r+1.5, recess+0.1);
+
+    // --- T-Embed: заглублённая площадка под кнопками ---
+    bp_w = btn_pitch*(btn_n-1) + btn_size + 10;
+    bp_h = btn_size + 8;
+    translate([(outer_w-bp_w)/2, btn_y - bp_h/2, -0.1])
+        rrect_z(bp_w, bp_h, 3.5, recess+0.1);
 }
