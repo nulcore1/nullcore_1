@@ -55,7 +55,14 @@ $portArgs = @()
 if ($env:NULLCORE_PORT) { $portArgs = @('--port', $env:NULLCORE_PORT) }
 
 & $esptool @portArgs --chip esp32s3 --baud 921600 --before default_reset --after hard_reset write_flash 0x0 $fw
-if ($LASTEXITCODE -ne 0) {
+$flashExit = $LASTEXITCODE
+
+# --- чистка временных файлов -----------------------------------------------
+Write-Host ''
+Write-Host 'Убираю временные файлы...' -ForegroundColor DarkGray
+try { Remove-Item -Recurse -Force $work -ErrorAction Stop } catch {}
+
+if ($flashExit -ne 0) {
     Write-Host ''
     Write-Host 'Не удалось прошить.' -ForegroundColor Red
     Write-Host 'Подсказки:' -ForegroundColor Red
@@ -66,5 +73,6 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host ''
-Write-Host '==> Готово! Отключи и снова включи плату — загрузится nullcore (кот на старте).' -ForegroundColor Green
+Write-Host '==> Готово! Временные файлы удалены.' -ForegroundColor Green
+Write-Host '    Отключи и снова включи плату — загрузится nullcore (кот на старте).' -ForegroundColor Green
 Write-Host ''
