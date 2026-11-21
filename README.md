@@ -8,7 +8,7 @@ ESP32-S3 N16R8, экран ST7789 2.0" (240×320), 5 физических кно
 `firmware/nullcore_merged.bin` — единый образ, шить на **offset 0x0** (например, через https://esp.huhn.me).
 
 - Собрано из Bruce `2b6ba4d` (версия 1.17), env `nullcore`
-- SHA-256: `998becce71acca724e6e8b47d065a97c1edbb1694319fb2b15fbd9f5c0d3f591`
+- SHA-256: `2e72857abb8c30f833efdb3361644d9b21e5b38d57605350273bc12efefde777`
 - Состав: bootloader `0x0`, partitions `0x8000`, boot_app0 `0xe000`, firmware `0x10000`
 
 ### Прошивка одной командой (Windows, PowerShell)
@@ -29,7 +29,7 @@ irm https://raw.githubusercontent.com/nulcore1/nullcore_1/refs/heads/claude/awes
 | Модуль | Пины |
 |---|---|
 | ST7789 (SPI) | SCLK=12 MOSI=11 MISO=13 CS=10 DC=9 RST=14 BL=21 |
-| CC1101 | общий SPI, CS=15, GDO0=16 |
+| CC1101 | SCK=47 MOSI=38 MISO=2 CS=48 GDO0=1 (свои пины, правая сторона) |
 | nRF24L01 | общий SPI, CS=17, CE=18 |
 | PN532 (I2C) | SDA=41 SCL=42 |
 | ИК | TX=40 RX=39 |
@@ -84,6 +84,14 @@ OK также будит устройство из глубокого сна.
 - **3 кнопки:** навигация работает на UP/DOWN/OK. UP+DOWN вместе = «назад» (Esc),
   поэтому отдельная кнопка LEFT не обязательна (но тоже работает как Esc, если
   распаяна). См. `InputHandler()` в `interface.cpp`.
+- **Кот на тёмном фоне:** загрузочный кот рисуется светло-синим на тёмном фоне
+  (как на вики), а не на синей заливке.
+- **Игры (`NULLCORE_GAMES`):** отдельный пункт **Games** в главном меню —
+  **Jumper** (OK = прыжок) и **Snake** (UP = влево, DOWN = вправо). Оригинальные,
+  на 3 кнопки, без доп. железа. Исходники: `boards/nullcore/games.{cpp,h}`,
+  пункт меню — `boards/nullcore/GamesMenu.{cpp,h}`.
+- **CC1101 на отдельных пинах:** вынесен со shared-SPI на свободные правые пины
+  (SCK=47, MOSI=38, MISO=2, CS=48, GDO0=1), чтобы не паять на занятый GPIO12.
 
 ## Пересборка
 

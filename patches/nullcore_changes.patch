@@ -15,10 +15,10 @@ index 72d69eb..3c27972 100644
      uint16_t badUSBBLEKeyDelay = 10;
      bool badUSBBLEShowOutput = true;
 diff --git a/src/core/main_menu.cpp b/src/core/main_menu.cpp
-index 7420b9e..b3a3c27 100644
+index 7420b9e..c314736 100644
 --- a/src/core/main_menu.cpp
 +++ b/src/core/main_menu.cpp
-@@ -9,25 +9,29 @@ MainMenu::MainMenu() {
+@@ -9,26 +9,33 @@ MainMenu::MainMenu() {
          &bleMenu,
          &rfMenu,
          &nrf24Menu,
@@ -50,9 +50,13 @@ index 7420b9e..b3a3c27 100644
 -#if !defined(LITE_VERSION)
 +#if !defined(LITE_VERSION) && !defined(NULLCORE_TRIM)
          &wireToolsMenu,
++#endif
++#if defined(NULLCORE_GAMES)
++        &gamesMenu,
  #endif
          &configMenu,
-@@ -256,6 +260,10 @@ void MainMenu::drawGridCell(int index, bool selected) {
+     };
+@@ -256,6 +263,10 @@ void MainMenu::drawGridCell(int index, bool selected) {
  
      tft.fillRect(x, y, _grid.cellW, _grid.cellH, bruceConfig.bgColor);
      if (selected) tft.fillRoundRect(x + 1, y + 1, _grid.cellW - 2, _grid.cellH - 2, 3, bgColor);
@@ -63,6 +67,25 @@ index 7420b9e..b3a3c27 100644
  
      MenuItemInterface *item = static_cast<MenuItemInterface *>(options[index].hoverPointer);
      if (item)
+diff --git a/src/core/main_menu.h b/src/core/main_menu.h
+index e8ba931..199fdc5 100644
+--- a/src/core/main_menu.h
++++ b/src/core/main_menu.h
+@@ -20,8 +20,14 @@
+ #include "menu_items/ScriptsMenu.h"
+ #include "menu_items/WifiMenu.h"
+ #include "menu_items/WireToolsMenu.h"
++#if defined(NULLCORE_GAMES)
++#include "GamesMenu.h"
++#endif
+ class MainMenu {
+ public:
++#if defined(NULLCORE_GAMES)
++    GamesMenu gamesMenu;
++#endif
+     FileMenu fileMenu;
+     BleMenu bleMenu;
+     ClockMenu clockMenu;
 diff --git a/src/core/menu_items/WifiMenu.cpp b/src/core/menu_items/WifiMenu.cpp
 index 2e6512c..b998183 100644
 --- a/src/core/menu_items/WifiMenu.cpp
@@ -120,7 +143,7 @@ index 1e7c94e..19c6792 100644
  struct themeFiles {
      String wifi = "";
 diff --git a/src/main.cpp b/src/main.cpp
-index eebc4a9..ee297a9 100644
+index eebc4a9..93019de 100644
 --- a/src/main.cpp
 +++ b/src/main.cpp
 @@ -1,5 +1,8 @@
@@ -167,8 +190,8 @@ index eebc4a9..ee297a9 100644
 +                nullcore_cat_bits,
 +                nullcore_cat_width,
 +                nullcore_cat_height,
-+                bruceConfig.bgColor,
-+                bruceConfig.priColor
++                bruceConfig.priColor, // cat pixels = light blue
++                bruceConfig.bgColor   // background = dark (like the wiki)
 +            );
 +#else
          if (!boot_img && (millis() - i > 2200) && (millis() - i) < 2700)

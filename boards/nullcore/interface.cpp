@@ -42,8 +42,10 @@ void _setup_gpio() {
     bruceConfigPins.i2c_bus = {(gpio_num_t)41, (gpio_num_t)42};
 
     // CC1101 Sub-GHz: sck, miso, mosi, cs, gdo0
+    // nullcore: moved onto the free right-side header pins so the crowded
+    // left side / shared display SCK (GPIO12) never has to be touched.
     bruceConfigPins.CC1101_bus = {
-        (gpio_num_t)12, (gpio_num_t)13, (gpio_num_t)11, (gpio_num_t)15, (gpio_num_t)16
+        (gpio_num_t)47, (gpio_num_t)2, (gpio_num_t)38, (gpio_num_t)48, (gpio_num_t)1
     };
 
     // nRF24L01: sck, miso, mosi, cs(ss), ce
