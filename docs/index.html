@@ -106,8 +106,8 @@
 
   <section>
     <p class="eyebrow">Прошивка</p>
-    <h2>Одной командой · Windows</h2>
-    <p class="muted">Ничего ставить не надо — Python не нужен, VPN не нужен. Открой PowerShell, вставь строку и нажми Enter:</p>
+    <h2>Способ 1 — одной командой (Windows)</h2>
+    <p class="muted">Ничего ставить не надо — Python не нужен, VPN не нужен. Открой <b>PowerShell</b>, вставь строку и нажми Enter:</p>
     <div class="cmd">
       <div class="lbl">PowerShell</div>
       <code>irm https://raw.githubusercontent.com/nulcore1/nullcore_1/refs/heads/main/flash.ps1 | iex</code>
@@ -115,11 +115,38 @@
     <ol class="steps">
       <li>Подключи плату по USB <b>дата-кабелем</b> (не «только зарядка»).</li>
       <li>Команда сама скачает esptool + прошивку и зальёт на <code>0x0</code>.</li>
-      <li>Увидишь зелёное «Готово» — временные файлы удаляются автоматически.</li>
+      <li>Зелёное «Готово» — временные файлы удаляются автоматически, перезагрузи плату.</li>
     </ol>
-    <div class="note"><b>Не подключается?</b> Зажми BOOT, ткни RESET, отпусти BOOT и запусти снова.
-    Если COM-портов несколько: <code>$env:NULLCORE_PORT="COM5"</code> и повтори команду.
-    Альтернатива без PowerShell — залить <code>nullcore_merged.bin</code> на <code>0x0</code> через esp.huhn.me.</div>
+    <div class="note"><b>Несколько COM-портов?</b> Укажи свой и повтори команду:
+    <code>$env:NULLCORE_PORT="COM5"</code></div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Прошивка</p>
+    <h2>Способ 2 — через сайт esp.huhn.me</h2>
+    <p class="muted">Браузер Chrome/Edge на ПК. Файл <code>nullcore_merged.bin</code> возьми из папки
+    <code>firmware/</code> репозитория (для своей платы — <code>nullcore-&lt;плата&gt;_merged.bin</code>).</p>
+    <ol class="steps">
+      <li>Открой <b>esp.huhn.me</b>, подключи плату по USB.</li>
+      <li><b>Connect</b> → выбери COM-порт платы.</li>
+      <li><b>Erase</b> (очистить флеш), дождись «done».</li>
+      <li>В строке адреса поставь <code>0x0</code>, кнопкой выбери файл <code>.bin</code>.</li>
+      <li><b>Program</b> → дождись 100%.</li>
+      <li>Нажми <b>Reset</b> или отключи-включи плату — загрузится nullcore (кот на старте).</li>
+    </ol>
+    <div class="note"><b>В конце выскочила ошибка «serial data stream stopped» на ~100%?</b>
+    На родном USB-порту это частое и обычно безобидное — прошивка уже записана. Просто перезагрузи плату и проверь, появился ли кот.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Если не прошивается</p>
+    <h2>Решение проблем</h2>
+    <div class="feat">
+      <div class="card"><h3>COM-порт не появляется</h3><p>Недолитая прошивка не создаёт порт. Введи плату в режим загрузки: <b>зажми BOOT → ткни RESET → отпусти BOOT</b> — порт появится, тогда Connect и Program.</p></div>
+      <div class="card"><h3>Светится, но нет данных</h3><p>Чаще всего <b>кабель</b>. Нужен дата-кабель (которым телефон к ПК с передачей файлов). Зарядные кабели дают только питание.</p></div>
+      <div class="card"><h3>Два USB-разъёма</h3><p>У многих плат ESP32-S3 два USB-C. Прошивай через тот, что <b>определяется как COM</b>. Если один «мёртвый» — используй второй.</p></div>
+      <div class="card"><h3>Обрывается на 20–50%</h3><p>Плохой контакт/кабель. Зажми <b>BOOT</b> на время прошивки, или укажи порт <code>$env:NULLCORE_PORT</code>, или смени кабель.</p></div>
+    </div>
   </section>
 
   <section>
