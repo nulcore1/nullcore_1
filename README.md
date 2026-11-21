@@ -8,7 +8,7 @@ ESP32-S3 N16R8, экран ST7789 2.0" (240×320), 5 физических кно
 `firmware/nullcore_merged.bin` — единый образ, шить на **offset 0x0** (например, через https://esp.huhn.me).
 
 - Собрано из Bruce `2b6ba4d` (версия 1.17), env `nullcore`
-- SHA-256: `2e72857abb8c30f833efdb3361644d9b21e5b38d57605350273bc12efefde777`
+- SHA-256: `266ba50c265b71c241aa114f197d92484943c069bcb86a3ff435c7d1c3c1eea2`
 - Состав: bootloader `0x0`, partitions `0x8000`, boot_app0 `0xe000`, firmware `0x10000`
 
 ### Прошивка одной командой (Windows, PowerShell)
@@ -30,7 +30,7 @@ irm https://raw.githubusercontent.com/nulcore1/nullcore_1/refs/heads/claude/awes
 |---|---|
 | ST7789 (SPI) | SCLK=12 MOSI=11 MISO=13 CS=10 DC=9 RST=14 BL=21 |
 | CC1101 | SCK=47 MOSI=38 MISO=2 CS=48 GDO0=1 (свои пины, правая сторона) |
-| nRF24L01 | общий SPI, CS=17, CE=18 |
+| nRF24L01 | SCK=47 MOSI=38 MISO=2 (общие с CC1101) CS=16 CE=15 |
 | PN532 (I2C) | SDA=41 SCL=42 |
 | ИК | TX=40 RX=39 |
 | Кнопки (на GND) | UP=4 DOWN=5 LEFT=6 RIGHT=7 OK=8 |

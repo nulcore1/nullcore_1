@@ -49,8 +49,10 @@ void _setup_gpio() {
     };
 
     // nRF24L01: sck, miso, mosi, cs(ss), ce
+    // nullcore: shares CC1101's right-side SPI (47/2/38) so it can be wired
+    // with female-female jumpers to free pins — no soldering, no breadboard.
     bruceConfigPins.NRF24_bus = {
-        (gpio_num_t)12, (gpio_num_t)13, (gpio_num_t)11, (gpio_num_t)17, (gpio_num_t)18
+        (gpio_num_t)47, (gpio_num_t)2, (gpio_num_t)38, (gpio_num_t)16, (gpio_num_t)15
     };
 
     // Default modules fitted on nullcore (otherwise Bruce assumes M5 RF433 / M5 RFID2)
