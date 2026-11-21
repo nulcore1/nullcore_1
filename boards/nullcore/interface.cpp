@@ -100,8 +100,14 @@ void InputHandler(void) {
     checkPowerSaveTime();
     if (!wakeUpScreen()) AnyKeyPress = true;
 
-    if (up) PrevPress = true;
-    if (down) NextPress = true;
+    // 3-button layout: UP + DOWN pressed together = Esc (back), so a dedicated
+    // LEFT button is optional. LEFT still works as Esc when wired.
+    if (up && down) {
+        EscPress = true;
+    } else {
+        if (up) PrevPress = true;
+        if (down) NextPress = true;
+    }
     if (left) EscPress = true;
     if (right || ok) SelPress = true;
 

@@ -1,5 +1,21 @@
+diff --git a/src/core/config.h b/src/core/config.h
+index 72d69eb..3c27972 100644
+--- a/src/core/config.h
++++ b/src/core/config.h
+@@ -98,7 +98,10 @@ public:
+     int devMode = 0;
+ 
+     int colorInverted = DEFAULT_COLOR_INVERTED;
+-    int mainMenuStyle = MAIN_MENU_CAROUSEL;
++#ifndef DEFAULT_MAIN_MENU_STYLE
++#define DEFAULT_MAIN_MENU_STYLE MAIN_MENU_CAROUSEL
++#endif
++    int mainMenuStyle = DEFAULT_MAIN_MENU_STYLE;
+     int badUSBBLEKeyboardLayout = 0;
+     uint16_t badUSBBLEKeyDelay = 10;
+     bool badUSBBLEShowOutput = true;
 diff --git a/src/core/main_menu.cpp b/src/core/main_menu.cpp
-index 7420b9e..8e6bffb 100644
+index 7420b9e..b3a3c27 100644
 --- a/src/core/main_menu.cpp
 +++ b/src/core/main_menu.cpp
 @@ -9,25 +9,29 @@ MainMenu::MainMenu() {
@@ -36,6 +52,17 @@ index 7420b9e..8e6bffb 100644
          &wireToolsMenu,
  #endif
          &configMenu,
+@@ -256,6 +260,10 @@ void MainMenu::drawGridCell(int index, bool selected) {
+ 
+     tft.fillRect(x, y, _grid.cellW, _grid.cellH, bruceConfig.bgColor);
+     if (selected) tft.fillRoundRect(x + 1, y + 1, _grid.cellW - 2, _grid.cellH - 2, 3, bgColor);
++#if defined(NULLCORE_TILE_FRAMES)
++    // nullcore: frame every tile so the grid reads as cards
++    else tft.drawRoundRect(x + 2, y + 2, _grid.cellW - 4, _grid.cellH - 4, 4, bruceConfig.priColor);
++#endif
+ 
+     MenuItemInterface *item = static_cast<MenuItemInterface *>(options[index].hoverPointer);
+     if (item)
 diff --git a/src/core/menu_items/WifiMenu.cpp b/src/core/menu_items/WifiMenu.cpp
 index 2e6512c..b998183 100644
 --- a/src/core/menu_items/WifiMenu.cpp
@@ -93,10 +120,19 @@ index 1e7c94e..19c6792 100644
  struct themeFiles {
      String wifi = "";
 diff --git a/src/main.cpp b/src/main.cpp
-index eebc4a9..ba621c1 100644
+index eebc4a9..ee297a9 100644
 --- a/src/main.cpp
 +++ b/src/main.cpp
-@@ -274,13 +274,9 @@ void boot_screen() {
+@@ -1,5 +1,8 @@
+ #include "core/main_menu.h"
+ #include <globals.h>
++#if defined(NULLCORE_CAT)
++#include "nullcore_cat.h"
++#endif
+ 
+ #include "core/bus_HAL.h"
+ #include "core/powerSave.h"
+@@ -274,13 +277,9 @@ void boot_screen() {
      tft.setTextColor(bruceConfig.priColor, bruceConfig.bgColor);
      tft.setTextSize(FM);
      tft.drawPixel(0, 0, bruceConfig.bgColor);
@@ -111,3 +147,38 @@ index eebc4a9..ba621c1 100644
  }
  
  /*********************************************************************
+@@ -336,6 +335,26 @@ void boot_screen_anim() {
+             drawn = true;
+         }
+ #if !defined(LITE_VERSION)
++#if defined(NULLCORE_CAT)
++        // nullcore: show the cat mascot instead of the Bruce logo
++        if (!boot_img && (millis() - i > 2700) && (millis() - i) < 3400) {
++            tft.fillRect(0, 45, tftWidth, tftHeight - 45, bruceConfig.bgColor);
++            tft.setTextColor(bruceConfig.priColor, bruceConfig.bgColor);
++            tft.setTextSize(FG);
++            tft.drawCentreString("=^_^=", tftWidth / 2, tftHeight / 2 - 10, 1);
++        }
++        if (!boot_img && (millis() - i > 3400) && (millis() - i) < 3600) tft.fillScreen(bruceConfig.bgColor);
++        if (!boot_img && (millis() - i > 3600))
++            tft.drawXBitmap(
++                (tftWidth - nullcore_cat_width) / 2,
++                (tftHeight - nullcore_cat_height) / 2,
++                nullcore_cat_bits,
++                nullcore_cat_width,
++                nullcore_cat_height,
++                bruceConfig.bgColor,
++                bruceConfig.priColor
++            );
++#else
+         if (!boot_img && (millis() - i > 2200) && (millis() - i) < 2700)
+             tft.drawRect(2 * tftWidth / 3, tftHeight / 2, 2, 2, bruceConfig.priColor);
+         if (!boot_img && (millis() - i > 2700) && (millis() - i) < 2900)
+@@ -361,6 +380,7 @@ void boot_screen_anim() {
+                 bruceConfig.bgColor,
+                 bruceConfig.priColor
+             );
++#endif
+ #endif
+         if (check(AnyKeyPress)) // If any key or M5 key is pressed, it'll jump the boot screen
+         {
