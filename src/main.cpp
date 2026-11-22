@@ -336,24 +336,35 @@ void boot_screen_anim() {
         }
 #if !defined(LITE_VERSION)
 #if defined(NULLCORE_CAT)
-        // nullcore: show the cat mascot instead of the Bruce logo
-        if (!boot_img && (millis() - i > 2700) && (millis() - i) < 3400) {
-            tft.fillRect(0, 45, tftWidth, tftHeight - 45, bruceConfig.bgColor);
-            tft.setTextColor(bruceConfig.priColor, bruceConfig.bgColor);
-            tft.setTextSize(FG);
-            tft.drawCentreString("=^_^=", tftWidth / 2, tftHeight / 2 - 10, 1);
+        // nullcore: animated cat boot — cat (once) + "nullcore" wordmark + growing accent bar
+        static bool ncDrawn = false;
+        if (!boot_img && (millis() - i > 2600)) {
+            int cx = tftWidth / 2;
+            int catY = tftHeight / 2 - nullcore_cat_height / 2 - 26;
+            if (!ncDrawn) {
+                tft.fillScreen(bruceConfig.bgColor);
+                tft.drawXBitmap(
+                    (tftWidth - nullcore_cat_width) / 2, catY, nullcore_cat_bits,
+                    nullcore_cat_width, nullcore_cat_height,
+                    bruceConfig.priColor, // cat pixels = accent
+                    bruceConfig.bgColor   // background = dark
+                );
+                tft.setTextColor(bruceConfig.priColor, bruceConfig.bgColor);
+                tft.setTextSize(FM);
+                tft.drawCentreString("nullcore", cx, catY + nullcore_cat_height + 12, 1);
+                tft.setTextColor(bruceConfig.secColor, bruceConfig.bgColor);
+                tft.setTextSize(FP);
+                tft.drawCentreString(BRUCE_VERSION, cx, catY + nullcore_cat_height + 36, 1);
+                ncDrawn = true;
+            }
+            // growing accent underline (2600 -> 5200 ms), flicker-free (only grows)
+            long el = (long)(millis() - i) - 2600;
+            if (el < 0) el = 0;
+            if (el > 2600) el = 2600;
+            int w = (int)((long)(tftWidth / 2) * el / 2600);
+            int barY = catY + nullcore_cat_height + 58;
+            tft.fillRect(cx - w / 2, barY, w, 3, bruceConfig.priColor);
         }
-        if (!boot_img && (millis() - i > 3400) && (millis() - i) < 3600) tft.fillScreen(bruceConfig.bgColor);
-        if (!boot_img && (millis() - i > 3600))
-            tft.drawXBitmap(
-                (tftWidth - nullcore_cat_width) / 2,
-                (tftHeight - nullcore_cat_height) / 2,
-                nullcore_cat_bits,
-                nullcore_cat_width,
-                nullcore_cat_height,
-                bruceConfig.priColor, // cat pixels = light blue
-                bruceConfig.bgColor   // background = dark (like the wiki)
-            );
 #else
         if (!boot_img && (millis() - i > 2200) && (millis() - i) < 2700)
             tft.drawRect(2 * tftWidth / 3, tftHeight / 2, 2, 2, bruceConfig.priColor);
