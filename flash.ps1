@@ -47,9 +47,11 @@ $boards = @(
 
 # ---------- 1. выбор языка ----------
 Logo
-Write-Host ' Выберите язык / Choose language:' -ForegroundColor Yellow
-Write-Host '   [1] Русский'
-Write-Host '   [2] English'
+Write-Host ' Язык / Language:' -ForegroundColor Yellow
+Write-Host '--------------------------------------------' -ForegroundColor DarkGray
+Write-Host '   [1] ' -ForegroundColor Cyan -NoNewline; Write-Host 'RU ' -ForegroundColor White -NoNewline; Write-Host ' — Русский'  -ForegroundColor Gray
+Write-Host '   [2] ' -ForegroundColor Cyan -NoNewline; Write-Host 'ENG' -ForegroundColor White -NoNewline; Write-Host ' — English'  -ForegroundColor Gray
+Write-Host '--------------------------------------------' -ForegroundColor DarkGray
 $sel = Read-Host ' >'
 if ($sel -eq '2') { $script:lang = 'en' } else { $script:lang = 'ru' }
 
