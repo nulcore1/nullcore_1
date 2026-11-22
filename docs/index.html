@@ -99,6 +99,21 @@
     main{padding:24px 16px 70px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
   }
   body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--panel2);z-index:50}
+  /* online flasher */
+  .online{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:14px 0 6px;
+    padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel2)}
+  #nc-board{appearance:none;-webkit-appearance:none;background:var(--panel);color:var(--fg);
+    border:1px solid var(--line);border-radius:10px;padding:11px 36px 11px 14px;font-size:15px;
+    font-family:inherit;cursor:pointer;min-width:220px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238fe3ff' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center}
+  #nc-board:focus{outline:none;border-color:var(--accent)}
+  .flashbtn{background:var(--accent);color:#07131c;border:none;border-radius:10px;
+    padding:12px 22px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;
+    transition:filter .15s ease,transform .05s ease}
+  .flashbtn:hover{filter:brightness(1.08)}
+  .flashbtn:active{transform:translateY(1px)}
+  .owarn{color:#ffbf6b;font-size:14px;max-width:360px}
 </style>
 </head>
 <body>
@@ -161,7 +176,31 @@
       <p class="eyebrow" data-en="Flashing">Прошивка</p>
       <h1 class="page" data-en="How to flash">Как прошить</h1>
 
-      <h2 data-en="Method 1 — one command (Windows)">Способ 1 — одной командой (Windows)</h2>
+      <h2 data-en="Method 1 — flash online">Способ 1 — прошить онлайн (в браузере)</h2>
+      <p class="muted" data-en="Pick your board, plug it in by USB, click Flash — right in the browser, nothing to download.">Выбери плату, воткни по USB, нажми «Прошить» — прямо в браузере, ничего качать не надо.</p>
+      <div class="online">
+        <select id="nc-board" aria-label="board">
+          <option value="manifests/nullcore.json">DIY nullcore</option>
+          <option value="manifests/t-embed.json">LilyGO T-Embed</option>
+          <option value="manifests/t-embed-cc1101.json">LilyGO T-Embed CC1101</option>
+          <option value="manifests/t-display-s3.json">LilyGO T-Display-S3</option>
+          <option value="manifests/t-deck.json">LilyGO T-Deck</option>
+          <option value="manifests/m5stick-s3.json">M5Stick S3</option>
+          <option value="manifests/cardputer.json">M5Cardputer</option>
+          <option value="manifests/s3-devkit.json">ESP32-S3 DevKitC-1</option>
+          <option value="manifests/m5stickc-plus.json">M5StickC Plus</option>
+          <option value="manifests/m5stickc-plus2.json">M5StickC Plus2</option>
+          <option value="manifests/cyd-2432s028.json">CYD 2432S028</option>
+        </select>
+        <esp-web-install-button id="nc-install" manifest="manifests/nullcore.json">
+          <button slot="activate" class="flashbtn" data-en="⚡ Flash">⚡ Прошить</button>
+          <span slot="unsupported" class="owarn" data-en="Your browser has no Web Serial — use Chrome or Edge on a desktop.">Нет Web Serial — нужен Chrome или Edge на компьютере.</span>
+          <span slot="not-allowed" class="owarn" data-en="Open this page over https.">Открой страницу по https.</span>
+        </esp-web-install-button>
+      </div>
+      <p class="muted" data-en="Works in Chrome/Edge on desktop only (Web Serial). On phone/Safari/Firefox use the methods below.">Работает только в Chrome/Edge на ПК (Web Serial). На телефоне/Safari/Firefox — способами ниже.</p>
+
+      <h2 data-en="Method 2 — one command (Windows)">Способ 2 — одной командой (Windows)</h2>
       <p class="muted" data-en="Nothing to install — no Python, no VPN. Open PowerShell, paste the line and press Enter:">Ничего ставить не надо — Python не нужен, VPN не нужен. Открой PowerShell, вставь строку и нажми Enter:</p>
       <div class="cmd"><div class="lbl">PowerShell</div><code>irm https://raw.githubusercontent.com/nulcore1/nullcore_1/refs/heads/main/flash.ps1 | iex</code></div>
       <ol class="steps">
@@ -172,7 +211,7 @@
       </ol>
       <div class="note" data-en='<b>Several COM ports?</b> Set yours and re-run: <code>$env:NULLCORE_PORT="COM5"</code>'><b>Несколько COM-портов?</b> Укажи свой и повтори: <code>$env:NULLCORE_PORT="COM5"</code></div>
 
-      <h2 data-en="Method 2 — via esp.huhn.me">Способ 2 — через сайт esp.huhn.me</h2>
+      <h2 data-en="Method 3 — via esp.huhn.me">Способ 3 — через сайт esp.huhn.me</h2>
       <p class="muted" data-en="Chrome/Edge on a PC. Take the <code>.bin</code> from the <code>firmware/</code> folder of the repo (for your board — <code>nullcore-&lt;board&gt;_merged.bin</code>).">Браузер Chrome/Edge на ПК. Файл возьми из папки <code>firmware/</code> репозитория (для своей платы — <code>nullcore-&lt;плата&gt;_merged.bin</code>).</p>
       <ol class="steps">
         <li data-en="Open <b>esp.huhn.me</b>, connect the board by USB.">Открой <b>esp.huhn.me</b>, подключи плату по USB.</li>
@@ -345,10 +384,16 @@ build_src_filter = ${env:BASE-BRUCE-ENV.build_src_filter} ${nullcore_flavor.src_
     document.querySelectorAll('#nav a').forEach(function(a){ a.classList.toggle('active', a.getAttribute('href')==='#'+id); });
     window.scrollTo(0,0);
   }
+  // online flasher: swap manifest when board changes
+  var ncBoard = document.getElementById('nc-board'), ncInstall = document.getElementById('nc-install');
+  if(ncBoard && ncInstall){
+    ncBoard.addEventListener('change', function(e){ ncInstall.manifest = e.target.value; });
+  }
   window.addEventListener('hashchange', route);
   var saved='ru'; try{ saved = localStorage.getItem('nc_lang')||'ru'; }catch(e){}
   setLang(saved); route();
 })();
 </script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/esp-web-tools@10.0.0/dist/web/install-button.js"></script>
 </body>
 </html>

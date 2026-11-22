@@ -1,0 +1,15 @@
+{
+  "name": "nullcore · M5StickC Plus2",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        {
+          "path": "https://raw.githubusercontent.com/nulcore1/nullcore_1/refs/heads/main/firmware/nullcore-m5stickc-plus2_merged.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

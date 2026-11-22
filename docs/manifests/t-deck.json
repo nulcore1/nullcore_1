@@ -1,0 +1,15 @@
+{
+  "name": "nullcore · LilyGO T-Deck",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "https://raw.githubusercontent.com/nulcore1/nullcore_1/refs/heads/main/firmware/nullcore-t-deck_merged.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

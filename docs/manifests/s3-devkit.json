@@ -1,0 +1,15 @@
+{
+  "name": "nullcore · ESP32-S3 DevKitC-1",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "https://raw.githubusercontent.com/nulcore1/nullcore_1/refs/heads/main/firmware/nullcore-s3-devkit_merged.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}
