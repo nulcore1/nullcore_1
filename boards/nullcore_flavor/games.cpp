@@ -1,3 +1,4 @@
+#if defined(NULLCORE_GAMES)
 // ============================================================
 //  nullcore mini-games — original, button-driven, no extra HW.
 //  Controls (3-button nullcore layout):
@@ -183,3 +184,4 @@ void game_snake() {
         if (!retry) return;
     }
 }
+#endif
