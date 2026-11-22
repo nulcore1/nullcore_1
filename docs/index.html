@@ -51,10 +51,12 @@
   section{display:none} section.show{display:block}
   .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
   h1.page{font-size:clamp(30px,6vw,46px);letter-spacing:-.03em;margin:0 0 14px}
-  h2{font-size:clamp(20px,4vw,27px);margin:34px 0 12px}
+  h2{font-size:clamp(20px,4vw,27px);margin:34px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
   p{margin:0 0 12px} .muted{color:var(--muted)}
 
-  .hero{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-bottom:10px}
+  .hero{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-bottom:10px;
+    background:radial-gradient(640px 300px at 12% -40px,rgba(143,227,255,.10),transparent 70%);
+    border-radius:16px;padding:10px 4px}
   .hero img{width:120px;height:auto;image-rendering:pixelated;filter:drop-shadow(0 0 22px rgba(143,227,255,.45))}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
   .chip{font-family:var(--mono);font-size:12px;color:var(--accent);border:1px solid var(--accent-dim);background:rgba(143,227,255,.06);border-radius:999px;padding:5px 11px}
@@ -126,6 +128,7 @@
       <a href="#features"  data-en="Features">Функции</a>
       <a href="#boards"    data-en="Boards">Платы</a>
       <a href="#pinout"    data-en="Pinout">Пинаут</a>
+      <a href="#dev"       data-en="Developers">Разработчикам</a>
       <div class="navsep"></div>
       <a href="#downloads" data-en="Downloads">Downloads</a>
     </nav>
@@ -162,8 +165,9 @@
       <p class="muted" data-en="Nothing to install — no Python, no VPN. Open PowerShell, paste the line and press Enter:">Ничего ставить не надо — Python не нужен, VPN не нужен. Открой PowerShell, вставь строку и нажми Enter:</p>
       <div class="cmd"><div class="lbl">PowerShell</div><code>irm https://raw.githubusercontent.com/nulcore1/nullcore_1/refs/heads/main/flash.ps1 | iex</code></div>
       <ol class="steps">
+        <li data-en="Pick the language (<b>RU / ENG</b>), then your board from the menu.">Выбери язык (<b>RU / ENG</b>), затем свою плату из меню.</li>
         <li data-en="Connect the board by USB with a <b>data cable</b> (not charge-only).">Подключи плату по USB <b>дата-кабелем</b> (не «только зарядка»).</li>
-        <li data-en="The command downloads esptool + firmware and flashes it to <code>0x0</code>.">Команда сама скачает esptool + прошивку и зальёт на <code>0x0</code>.</li>
+        <li data-en="The script downloads esptool + the right firmware and flashes it to <code>0x0</code>.">Скрипт сам скачает esptool + нужную прошивку и зальёт на <code>0x0</code>.</li>
         <li data-en="Green “Done” — temp files are removed automatically, reboot the board.">Зелёное «Готово» — временные файлы удаляются автоматически, перезагрузи плату.</li>
       </ol>
       <div class="note" data-en='<b>Several COM ports?</b> Set yours and re-run: <code>$env:NULLCORE_PORT="COM5"</code>'><b>Несколько COM-портов?</b> Укажи свой и повтори: <code>$env:NULLCORE_PORT="COM5"</code></div>
@@ -247,6 +251,64 @@
         </tbody>
       </table></div>
       <p class="muted" data-en="UP — up, DOWN — down, OK — select. <b style='color:var(--fg)'>UP+DOWN together = back.</b> CC1101/nRF24 share SCK/MOSI/MISO (47/38/2).">UP — вверх, DOWN — вниз, OK — выбор. <b style="color:var(--fg)">UP+DOWN вместе = назад.</b> CC1101/nRF24 делят SCK/MOSI/MISO (47/38/2).</p>
+    </section>
+
+    <!-- DEVELOPERS -->
+    <section id="dev">
+      <p class="eyebrow" data-en="Developers">Для разработчиков</p>
+      <h1 class="page" data-en="Developer Hub">Разработчикам</h1>
+      <p class="muted" data-en="nullcore is a <b style='color:var(--fg)'>self-contained fork of Bruce</b> (AGPL-3.0): the full source and libraries live in the repo, so it builds without cloning Bruce separately.">nullcore — <b style="color:var(--fg)">самодостаточный форк Bruce</b> (AGPL-3.0): весь исходник и библиотеки лежат в репо, собирается без отдельного клонирования Bruce.</p>
+
+      <h2 data-en="Build">Сборка</h2>
+      <div class="cmd"><div class="lbl">PlatformIO</div><code>git clone https://github.com/nulcore1/nullcore_1.git
+cd nullcore_1
+pio run -e nullcore            # DIY-устройство
+pio run -e nullcore-t-embed    # готовая плата</code></div>
+      <p class="muted" data-en="Third-party libraries are pulled by PlatformIO on first build. List all envs: <code>pio project config</code>.">Сторонние библиотеки PlatformIO докачивает сам при первой сборке. Все env: <code>pio project config</code>.</p>
+
+      <h2 data-en="Project layout">Структура проекта</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th data-en="Path">Путь</th><th data-en="What">Что</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">src/</td><td data-en="Bruce core (vendored)">Ядро Bruce (вложено)</td></tr>
+          <tr><td class="mono">lib/</td><td data-en="Patched libraries (TFT_eSPI, HAL…)">Патченые библиотеки (TFT_eSPI, HAL…)</td></tr>
+          <tr><td class="mono">boards/nullcore/</td><td data-en="DIY device board: pins, interface, cat, games">DIY-плата: пины, интерфейс, кот, игры</td></tr>
+          <tr><td class="mono">boards/nullcore_flavor/</td><td data-en="nullcore look for stock boards + per-board envs">«Начинка» для готовых плат + env'ы</td></tr>
+          <tr><td class="mono">firmware/</td><td data-en="Ready merged .bin files">Готовые merged .bin</td></tr>
+          <tr><td class="mono">docs/</td><td data-en="This wiki (GitHub Pages)">Эта вики (GitHub Pages)</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 data-en="Customization flags">Флаги кастомизации</h2>
+      <p class="muted" data-en="Everything is gated by build flags, so other Bruce boards stay untouched:">Всё включается флагами сборки — другие платы Bruce не затронуты:</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th data-en="Flag">Флаг</th><th data-en="Effect">Эффект</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">NULLCORE_CAT</td><td data-en="cat mascot on boot">кот на загрузке</td></tr>
+          <tr><td class="mono">NULLCORE_GAMES</td><td data-en="Games section (Jumper, Snake)">раздел Games (Jumper, Snake)</td></tr>
+          <tr><td class="mono">DEFAULT_MAIN_MENU_STYLE=1</td><td data-en="icon-grid main menu">меню-сетка иконок</td></tr>
+          <tr><td class="mono">NULLCORE_TILE_FRAMES</td><td data-en="card frames on grid tiles">рамки-карточки на плитках</td></tr>
+          <tr><td class="mono">DEFAULT_PRICOLOR</td><td data-en="default UI colour (Light Blue)">цвет интерфейса (Light Blue)</td></tr>
+          <tr><td class="mono">NULLCORE_TRIM</td><td data-en="drop menus for absent hardware (DIY only)">убрать лишние меню (только DIY)</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 data-en="Add your own board">Добавить свою плату</h2>
+      <p class="muted" data-en="The nullcore look layers on any Bruce board env. Add 4 lines to <code>boards/nullcore_flavor/nullcore_flavor.ini</code>:">«Начинка» надстраивается над любым env платы Bruce. 4 строки в <code>boards/nullcore_flavor/nullcore_flavor.ini</code>:</p>
+      <div class="cmd"><div class="lbl">nullcore_flavor.ini</div><code>[env:nullcore-myboard]
+extends = env:BASE-BRUCE-ENV
+build_flags = ${env:BASE-BRUCE-ENV.build_flags} ${nullcore_flavor.build_flags}
+build_src_filter = ${env:BASE-BRUCE-ENV.build_src_filter} ${nullcore_flavor.src_filter}</code></div>
+
+      <h2 data-en="Where the code lives">Где что в коде</h2>
+      <div class="feat">
+        <div class="card"><div class="ic">🐈 boot</div><h3 data-en="Cat mascot">Кот</h3><p data-en="nullcore_cat.h (XBM) + boot_screen_anim() in src/main.cpp">nullcore_cat.h (XBM) + boot_screen_anim() в src/main.cpp</p></div>
+        <div class="card"><div class="ic">🎮 games</div><h3 data-en="Games">Игры</h3><p data-en="games.{cpp,h} + GamesMenu.{cpp,h} in boards/nullcore(_flavor)">games.{cpp,h} + GamesMenu.{cpp,h} в boards/nullcore(_flavor)</p></div>
+        <div class="card"><div class="ic">( o_o )</div><h3>Signal Pet</h3><p data-en="src/modules/pwnagotchi/signalpet.{cpp,h}">src/modules/pwnagotchi/signalpet.{cpp,h}</p></div>
+        <div class="card"><div class="ic">▦ menu</div><h3 data-en="Grid menu">Меню-сетка</h3><p data-en="src/core/main_menu.cpp (drawGrid, tile frames)">src/core/main_menu.cpp (drawGrid, рамки)</p></div>
+      </div>
+
+      <div class="note" data-en="License: AGPL-3.0 (see LICENSE, NOTICE.md, THIRD_PARTY.md). Based on Bruce — github.com/pr3y/Bruce. If you distribute the firmware or run a network service on it, you must provide the corresponding source (AGPL).">Лицензия: AGPL-3.0 (см. LICENSE, NOTICE.md, THIRD_PARTY.md). Основано на Bruce — github.com/pr3y/Bruce. При распространении прошивки или сетевом сервисе на её базе обязан предоставлять исходники (AGPL).</div>
     </section>
 
     <!-- DOWNLOADS -->
