@@ -12,7 +12,7 @@ ESP32-S3 N16R8, экран ST7789 2.0" (240×320), физические кноп
 `firmware/nullcore_merged.bin` — единый образ, шить на **offset 0x0** (например, через https://esp.huhn.me).
 
 - Собрано из Bruce `2b6ba4d` (версия 1.17), env `nullcore`
-- SHA-256: `266ba50c265b71c241aa114f197d92484943c069bcb86a3ff435c7d1c3c1eea2`
+- SHA-256: `ab9b1cb6864eabcf440cdcc02577a25cb49dc1c2dc613fc0b98290d3652d5908`
 - Состав: bootloader `0x0`, partitions `0x8000`, boot_app0 `0xe000`, firmware `0x10000`
 
 ### Прошивка одной командой (Windows, PowerShell)
